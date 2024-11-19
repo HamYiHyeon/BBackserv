@@ -1,5 +1,7 @@
 #include "Card.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include "gamelogic.h"
 
 // 핸드를 평가하는 함수
 HandEvaluation evaluateHand(Card playerCards[], Card communityCards[]) {
@@ -25,7 +27,9 @@ void getCombinations(Card cards[], int numCards, Card combination[], int index, 
     if (index == comboSize) {
         HandEvaluation eval = evaluateFiveCardHand(combination);
         if (eval.rank > bestEvaluation->rank ||
-            (eval.rank == bestEvaluation->rank && eval.highCard > bestEvaluation->highCard)) {
+            (eval.rank == bestEvaluation->rank && eval.highCard > bestEvaluation->highCard) ||
+            (eval.rank == bestEvaluation->rank && eval.highCard == bestEvaluation->highCard &&
+                compareKickers(eval.kicker, bestEvaluation->kicker) > 0)) {
             *bestEvaluation = eval;
         }
         return;
@@ -132,7 +136,6 @@ HandEvaluation evaluateFiveCardHand(Card cards[]) {
         }
         else if (pairs == 2) {
             evaluation.rank = TWO_PAIR;
-            // 높은 페어와 낮은 페어 결정
             int highPair = 0, lowPair = 0;
             for (int i = 14; i >= 2; i--) {
                 if (rankCounts[i] == 2) {

@@ -1,7 +1,11 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "gamelogic.h"
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
+
+
+
 
 // 덱 초기화 함수: 52장의 카드를 초기화
 void initializeDeck(Card deck[]) {
@@ -17,7 +21,7 @@ void initializeDeck(Card deck[]) {
 
 // 덱 셔플 함수
 void shuffleDeck(Card deck[]) {
-    srand(time(NULL));
+    srand((unsigned int)time(NULL));
     for (int i = 0; i < DECK_SIZE; i++) {
         int j = rand() % DECK_SIZE;
         Card temp = deck[i];
@@ -101,143 +105,163 @@ void dealCommunityCards(Card communityCards[], Card deck[], int* deckIndex, Roun
 // 베팅 라운드 진행 함수: 각 플레이어가 베팅, 콜, 폴드 등의 액션을 진행
 void startBettingRound(Player players[], int playerCount, int* currentBet, int* pot) {
     int activePlayerCount = 0;
-    int highestBet = 0;
-    int playersToAct = playerCount;  // 현재 라운드에서 행동해야 하는 플레이어 수
+    int playersToAct = playerCount;
+    int lastToRaiseIndex = -1; // 마지막으로 레이즈한 플레이어의 인덱스
 
-    // 초기 설정: 모든 플레이어의 currentBet을 0으로 설정
+    // 초기 설정: 모든 플레이어의 currentBet을 0으로 설정하고, hasCalled를 0으로 초기화
     for (int i = 0; i < playerCount; i++) {
         players[i].currentBet = 0;
+        players[i].hasCalled = 0;
         if (players[i].isActive && players[i].money > 0) {
             activePlayerCount++;
         }
     }
 
     // 모든 플레이어가 레이즈에 맞추거나 폴드할 때까지 반복
-    while (playersToAct > 0) {
-        for (int i = 0; i < playerCount; i++) {
+    while (1) {
+        int allCalled = 1;  // 모든 플레이어가 레이즈에 맞췄는지 확인하기 위한 변수
+
+        // 마지막 레이즈한 플레이어 다음부터 시작
+        for (int i = (lastToRaiseIndex + 1) % playerCount, count = 0; count < playerCount; count++, i = (i + 1) % playerCount) {
             // 플레이어가 이미 폴드했거나 돈이 없는 경우 건너뜀
-            if (!players[i].isActive || players[i].money <= 0) {
+            if (!players[i].isActive || players[i].money <= 0 || players[i].isAllIn) {
+                continue;
+            }
+
+            // 마지막 레이즈 이후 모든 플레이어가 콜했으면 반복 종료
+            if (players[i].hasCalled == 1) {
                 continue;
             }
 
             // 플레이어의 행동 처리
-            printf("%s님의 차례입니다. 현재 베팅 금액: %d, 콜하려면 %d가 필요합니다.\n", players[i].name, highestBet, highestBet - players[i].currentBet);
-            handlePlayerAction(&players[i], &highestBet, pot);
+            int amountToCall = *currentBet - players[i].currentBet;
+            printf("%s님의 차례입니다. 현재 베팅 금액: %d, 콜하려면 %d가 필요합니다.\n", players[i].name, *currentBet, amountToCall);
+            handlePlayerAction(&players[i], currentBet, pot);
 
-            // 플레이어가 폴드했거나 베팅에 맞췄다면 playersToAct 감소
-            if (!players[i].isActive || players[i].currentBet >= highestBet) {
-                playersToAct--;
+            // 레이즈가 발생한 경우, 마지막으로 레이즈한 플레이어 기록 및 모든 플레이어의 hasCalled 초기화
+            if (players[i].currentBet > *currentBet) {
+                *currentBet = players[i].currentBet;
+                lastToRaiseIndex = i;
+
+                // 모든 플레이어의 hasCalled를 0으로 설정
+                for (int j = 0; j < playerCount; j++) {
+                    if (players[j].isActive && players[j].money > 0 && !players[j].isAllIn) {
+                        players[j].hasCalled = 0;
+                    }
+                }
+                players[i].hasCalled = 1; // 레이즈한 플레이어는 이미 콜한 것으로 표시
+            }
+            else if (players[i].currentBet == *currentBet) {
+                players[i].hasCalled = 1; // 콜했음을 표시
             }
 
-            // 모든 플레이어 중 활성 상태인 플레이어 수 확인
+            // 한 명만 남은 경우 즉시 라운드 종료
             activePlayerCount = 0;
             for (int j = 0; j < playerCount; j++) {
-                if (players[j].isActive && players[j].money > 0) {
+                if (players[j].isActive && (players[j].money > 0 || players[j].isAllIn)) {
                     activePlayerCount++;
                 }
             }
 
-            // 한 명만 남은 경우 즉시 라운드 종료
             if (activePlayerCount == 1) {
                 return;
             }
         }
 
-        // 라운드가 종료될 조건: 모든 플레이어가 레이즈에 맞췄거나 폴드했을 때
-        playersToAct = 0;
+        // 모든 플레이어가 레이즈에 맞췄거나 폴드했는지 확인
         for (int i = 0; i < playerCount; i++) {
-            if (players[i].isActive && players[i].currentBet < highestBet && players[i].money > 0) {
-                playersToAct++;
+            if (players[i].isActive && players[i].hasCalled == 0 && players[i].money > 0 && !players[i].isAllIn) {
+                allCalled = 0;
+                break;
             }
         }
+
+        if (allCalled) {
+            break;
+        }
     }
+
+    *currentBet = 0; // 다음 라운드를 위해 현재 베팅 금액 초기화
 }
+
+
 
 // 플레이어의 액션 처리 함수: 베팅, 콜, 폴드 등을 처리
-void handlePlayerAction(Player* player, int* highestBet, int* pot) {
+void handlePlayerAction(Player* player, int* currentBet, int* pot) {
     int action;
-    bool validAction = false;
+    printf("행동을 선택하세요: (1) 체크, (2) 콜, (3) 레이즈, (4) 폴드, (5) 올인: ");
+    scanf("%d", &action);
 
-    while (!validAction) {
-        printf("%s님, 행동을 선택해 주세요 (1: 콜, 2: 레이즈, 3: 폴드, 4: 체크, 5: 올인): ", player->name);
-        scanf("%d", &action);
-
-        switch (action) {
-        case 1: // 콜
-            if (*highestBet > player->currentBet) {
-                int amountToCall = *highestBet - player->currentBet;
-                if (player->money >= amountToCall) {
-                    player->money -= amountToCall;
-                    player->currentBet = *highestBet;
-                    *pot += amountToCall;
-                    printf("%s님이 %d를 콜했습니다.\n", player->name, amountToCall);
-                    validAction = true;
-                }
-                else {
-                    printf("잔액이 부족합니다. 올인만 가능합니다.\n");
-                }
-            }
-            else {
-                printf("이미 베팅이 맞춰졌습니다.\n");
-            }
-            break;
-
-        case 2: // 레이즈
-        {
-            int raiseAmount;
-            printf("얼마를 레이즈하시겠습니까? (현재 최고 베팅: %d): ", *highestBet);
-            scanf("%d", &raiseAmount);
-            if (raiseAmount > 0 && player->money >= raiseAmount + (*highestBet - player->currentBet)) {
-                int totalBet = *highestBet + raiseAmount;
-                player->money -= (totalBet - player->currentBet);
-                player->currentBet = totalBet;
-                *highestBet = totalBet;
-                *pot += (totalBet - player->currentBet);
-                printf("%s님이 %d만큼 레이즈하여 현재 최고 베팅은 %d입니다.\n", player->name, raiseAmount, *highestBet);
-                validAction = true;
-            }
-            else {
-                printf("잔액이 부족하거나 잘못된 금액입니다.\n");
-            }
+    switch (action) {
+    case 1: // 체크
+        if (*currentBet == player->currentBet) {
+            printf("%s님이 체크하셨습니다.\n", player->name);
+        }
+        else {
+            printf("체크를 할 수 없습니다. 현재 베팅 금액이 있습니다.\n");
+            handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
         }
         break;
 
-        case 3: // 폴드
-            player->isActive = 0;
-            printf("%s님이 폴드했습니다.\n", player->name);
-            validAction = true;
-            break;
-
-        case 4: // 체크
-            if (*highestBet == player->currentBet) {
-                printf("%s님이 체크했습니다.\n", player->name);
-                validAction = true;
-            }
-            else {
-                printf("체크할 수 없습니다. 현재 베팅을 맞춰야 합니다.\n");
-            }
-            break;
-
-        case 5: // 올인
-        {
-            int allInAmount = player->money;
-            player->currentBet += allInAmount;
-            player->money = 0;
-            *pot += allInAmount;
-            if (player->currentBet > *highestBet) {
-                *highestBet = player->currentBet;
-            }
-            printf("%s님이 올인하여 %d를 베팅했습니다.\n", player->name, allInAmount);
-            validAction = true;
+    case 2: // 콜
+        if (*currentBet == 0) {
+            // 현재 베팅 금액이 0일 때는 콜이 아닌 체크만 가능함
+            printf("현재 베팅 금액이 0이므로 체크만 가능합니다.\n");
+            handlePlayerAction(player, currentBet, pot);
+        }
+        else if (player->money >= *currentBet - player->currentBet) {
+            int amountToCall = *currentBet - player->currentBet;
+            player->money -= amountToCall;
+            *pot += amountToCall;
+            player->currentBet = *currentBet;
+            player->hasCalled = 1;  // 콜을 했음을 표시
+            printf("%s님이 콜하셨습니다.\n", player->name);
+        }
+        else {
+            printf("콜을 할 수 없습니다. 돈이 부족합니다. 올인을 선택해야 합니다.\n");
+            handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
         }
         break;
 
-        default:
-            printf("잘못된 입력입니다. 다시 선택해 주세요.\n");
-            break;
+    case 3: // 레이즈
+    {
+        int raiseAmount;
+        printf("얼마를 레이즈 하시겠습니까?: ");
+        scanf("%d", &raiseAmount);
+        if (player->money >= *currentBet - player->currentBet + raiseAmount) {
+            *pot += *currentBet - player->currentBet + raiseAmount;
+            player->money -= *currentBet - player->currentBet + raiseAmount;
+            player->currentBet += raiseAmount;
+            printf("%s님이 %d만큼 레이즈하셨습니다.\n", player->name, raiseAmount);
+        }
+        else {
+            printf("레이즈를 할 수 없습니다. 돈이 부족합니다.\n");
+            handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
         }
     }
+    break;
+
+    case 4: // 폴드
+        player->isActive = 0;
+        printf("%s님이 폴드하셨습니다.\n", player->name);
+        break;
+
+    case 5: // 올인
+        *pot += player->money;
+        player->currentBet += player->money;
+        player->money = 0;
+        *currentBet = (player->currentBet > *currentBet) ? player->currentBet : *currentBet;
+        player->isAllIn = 1;
+        printf("%s님이 올인하셨습니다.\n", player->name);
+        break;
+
+    default:
+        printf("잘못된 입력입니다. 다시 선택해주세요.\n");
+        handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
+        break;
+    }
 }
+
 
 
 // 메인서버에서 while (countActivePlayers(players, PLAYER_COUNT) > 1) { 이곳에 게임을 진행하는 코드 작성해주시면 됩니다 }
@@ -275,13 +299,16 @@ Player* checkForFoldWinner(Player players[], int playerCount) {
 
 
 // 승리자 판정 함수: 커뮤니티 카드와 플레이어의 홀 카드를 사용해 승리자 결정 (배팅라운드 종료 후 2명이상의 플레이어가 남았을 시에 패를 비교하여 승리자 결정)
-Player determineWinner(Player players[], int playerCount, Card communityCards[]) {
+Player* determineWinner(Player players[], int playerCount, Card communityCards[]) {
     Player* winner = NULL;
     HandEvaluation bestEvaluation = { HIGH_CARD, 0, {0} };
 
     for (int i = 0; i < playerCount; i++) {
-        if (players[i].isActive && players[i].money > 0) {
+        if (players[i].isActive) {
             HandEvaluation playerEvaluation = evaluateHand(players[i].holeCards, communityCards);
+
+            // 디버깅 출력
+            printf("%s님의 핸드 평가 결과: 랭크 = %d, 최고 카드 = %d\n", players[i].name, playerEvaluation.rank, playerEvaluation.highCard);
 
             if (winner == NULL ||
                 playerEvaluation.rank > bestEvaluation.rank ||
@@ -294,10 +321,16 @@ Player determineWinner(Player players[], int playerCount, Card communityCards[])
         }
     }
 
-    // 반드시 승자가 존재해야 함
-    printf("\n%s님이 가장 높은 핸드를 가지고 승리하셨습니다!\n", winner->name);
-    return *winner;
+    if (winner != NULL) {
+        printf("\n%s님이 가장 높은 핸드를 가지고 승리하셨습니다!\n", winner->name);
+    }
+    else {
+        printf("\n승리자가 없습니다. 확인이 필요합니다.\n");
+    }
+
+    return winner;
 }
+
 
 int compareKickers(int kicker1[], int kicker2[]) {
     for (int i = 0; i < 5; i++) {
@@ -317,6 +350,7 @@ void resetGame(Player players[], int playerCount) {
     for (int i = 0; i < playerCount; i++) {
         if (players[i].money > 0) {
             players[i].isActive = 1;
+            players[i].isAllIn = 0;
         }
         else {
             players[i].isActive = 0;

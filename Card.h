@@ -2,7 +2,6 @@
 #define CARD_H
 
 #define DECK_SIZE 52    // 덱의 총 카드 수
-#include "gamelogic.h"
 
 /* 플레이어의 카드와 커뮤니티 카드를 조합하여 플레이어의 패를 결정하는 로직입니다. */
 
