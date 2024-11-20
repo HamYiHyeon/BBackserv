@@ -56,26 +56,27 @@ const char* getSuitString(int suit) {
     }
 }
 
-// 홀 카드 분배 함수: 각 플레이어에게 2장의 홀 카드를 분배
-void dealHoleCards(Player players[], int playerCount, Card deck[], int* deckIndex) {
+// 홀 카드 분배 함수: 각 플레이어에게 2장의 홀 카드를 분배 (멀티프로세스용)
+void dealHoleCardsMulti(Player players[], int playerCount, Card deck[], int* deckIndex, int pipe_fds[][2]) {
     for (int i = 0; i < playerCount; i++) {
         players[i].holeCards[0] = deck[(*deckIndex)++];
         players[i].holeCards[1] = deck[(*deckIndex)++];
-        // 플레이어에게 분배된 카드 출력
-        printf("%s님의 홀 카드: [%s %s], [%s %s]\n",
-            players[i].name,
-            getRankString(players[i].holeCards[0].rank), getSuitString(players[i].holeCards[0].suit),
-            getRankString(players[i].holeCards[1].rank), getSuitString(players[i].holeCards[1].suit));
+
+        // 플레이어에게 분배된 카드를 파이프를 통해 전달
+        write(pipe_fds[i][1], &players[i].holeCards, sizeof(players[i].holeCards));
     }
 }
 
-
-// 커뮤니티 카드 분배 함수: 플랍, 턴, 리버 단계에 따라 커뮤니티 카드를 분배
-void dealCommunityCards(Card communityCards[], Card deck[], int* deckIndex, Round currentRound) {
+// 커뮤니티 카드 분배 함수: 플랍, 턴, 리버 단계에 따라 커뮤니티 카드를 분배 (멀티프로세스용)
+void dealCommunityCardsMulti(Card communityCards[], Card deck[], int* deckIndex, Round currentRound, int pipe_fds[][2], int playerCount) {
     switch (currentRound) {
     case FLOP:
         for (int i = 0; i < 3; i++) {
             communityCards[i] = deck[(*deckIndex)++];
+        }
+        // 커뮤니티 카드 정보를 모든 플레이어에게 전달
+        for (int i = 0; i < playerCount; i++) {
+            write(pipe_fds[i][1], &communityCards[0], sizeof(Card) * 3);
         }
         printf("플랍 단계: 커뮤니티 카드 3장이 공개되었습니다: [%s %s], [%s %s], [%s %s]\n",
             getRankString(communityCards[0].rank), getSuitString(communityCards[0].suit),
@@ -84,11 +85,19 @@ void dealCommunityCards(Card communityCards[], Card deck[], int* deckIndex, Roun
         break;
     case TURN:
         communityCards[3] = deck[(*deckIndex)++];
+        // 커뮤니티 카드 정보를 모든 플레이어에게 전달
+        for (int i = 0; i < playerCount; i++) {
+            write(pipe_fds[i][1], &communityCards[3], sizeof(Card));
+        }
         printf("턴 단계: 커뮤니티 카드 1장이 추가로 공개되었습니다: [%s %s]\n",
             getRankString(communityCards[3].rank), getSuitString(communityCards[3].suit));
         break;
     case RIVER:
         communityCards[4] = deck[(*deckIndex)++];
+        // 커뮤니티 카드 정보를 모든 플레이어에게 전달
+        for (int i = 0; i < playerCount; i++) {
+            write(pipe_fds[i][1], &communityCards[4], sizeof(Card));
+        }
         printf("리버 단계: 마지막 커뮤니티 카드 1장이 공개되었습니다: [%s %s]\n",
             getRankString(communityCards[4].rank), getSuitString(communityCards[4].suit));
         break;
@@ -97,9 +106,8 @@ void dealCommunityCards(Card communityCards[], Card deck[], int* deckIndex, Roun
     }
 }
 
-
-// 베팅 라운드 진행 함수: 각 플레이어가 베팅, 콜, 폴드 등의 액션을 진행
-void startBettingRound(Player players[], int playerCount, int* currentBet, int* pot, int* lastToRaiseIndex) {
+// 멀티프로세스를 위한 베팅 라운드 함수
+void startBettingRoundMulti(Player players[], int playerCount, int* currentBet, int* pot, int* lastToRaiseIndex, int pipe_fds[][2]) {
     int activePlayerCount = 0;
 
     // 초기 설정: 모든 플레이어의 currentBet을 0으로 설정하고, hasCalled를 0으로 초기화
@@ -124,18 +132,12 @@ void startBettingRound(Player players[], int playerCount, int* currentBet, int* 
                 continue;
             }
 
-            // 마지막 레이즈 이후 모든 플레이어가 콜했으면 반복 종료
-            if (players[i].hasCalled == 1) {
-                continue;
-            }
-
             // 플레이어의 행동 처리
-            int amountToCall = *currentBet - players[i].currentBet;
-            printf("%s님의 차례입니다. 현재 베팅 금액: %d, 콜하려면 %d가 필요합니다.\n", players[i].name, *currentBet, amountToCall);
-            handlePlayerAction(&players[i], currentBet, pot);
+            handlePlayerActionMulti(&players[i], currentBet, pot, i, pipe_fds);
 
-            // 레이즈가 발생한 경우, 마지막으로 레이즈한 플레이어 기록 및 모든 플레이어의 hasCalled 초기화
+            // 행동 후 처리 결과 확인
             if (players[i].currentBet > *currentBet) {
+                // 레이즈가 발생한 경우
                 *currentBet = players[i].currentBet;
                 *lastToRaiseIndex = i;
 
@@ -150,11 +152,13 @@ void startBettingRound(Player players[], int playerCount, int* currentBet, int* 
                 allCalled = 0; // 새로운 레이즈가 발생했으므로 다시 allCalled 확인 필요
             }
             else if (players[i].currentBet == *currentBet) {
-                players[i].hasCalled = 1; // 콜했음을 표시
+                // 콜한 경우
+                players[i].hasCalled = 1;
             }
 
-            if (amountToCall == 0 && *currentBet == 0) {
-                players[i].hasChecked = 1; // 플레이어가 체크했음을 표시
+            if (players[i].currentBet == 0 && *currentBet == 0) {
+                // 체크한 경우
+                players[i].hasChecked = 1;
             }
 
             // 한 명만 남은 경우 즉시 라운드 종료
@@ -198,40 +202,45 @@ void startBettingRound(Player players[], int playerCount, int* currentBet, int* 
     *currentBet = 0; // 다음 라운드를 위해 현재 베팅 금액 초기화
 }
 
+
 // 플레이어의 액션 처리 함수: 베팅, 콜, 폴드 등을 처리
-void handlePlayerAction(Player* player, int* currentBet, int* pot) {
+// 멀티프로세스용 플레이어 행동 처리 함수
+void handlePlayerActionMulti(Player* player, int* currentBet, int* pot, int playerIndex, int pipe_fds[][2]) {
     int action;
-    printf("행동을 선택하세요: (1) 체크, (2) 콜, (3) 레이즈, (4) 폴드, (5) 올인: ");
+
+    // 플레이어로부터 행동 입력 받기
+    printf("%s님의 행동 선택: (1) 체크, (2) 콜, (3) 레이즈, (4) 폴드, (5) 올인: ", player->name);
     scanf("%d", &action);
 
+    // 선택한 행동 처리
     switch (action) {
     case 1: // 체크
         if (*currentBet == player->currentBet) {
             printf("%s님이 체크하셨습니다.\n", player->name);
+            player->hasChecked = 1;
         }
         else {
             printf("체크를 할 수 없습니다. 현재 베팅 금액이 있습니다.\n");
-            handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
+            handlePlayerActionMulti(player, currentBet, pot, playerIndex, pipe_fds); // 재시도
         }
         break;
 
     case 2: // 콜
         if (*currentBet == 0) {
-            // 현재 베팅 금액이 0일 때는 콜이 아닌 체크만 가능함
             printf("현재 베팅 금액이 0이므로 체크만 가능합니다.\n");
-            handlePlayerAction(player, currentBet, pot);
+            handlePlayerActionMulti(player, currentBet, pot, playerIndex, pipe_fds); // 재시도
         }
         else if (player->money >= *currentBet - player->currentBet) {
             int amountToCall = *currentBet - player->currentBet;
             player->money -= amountToCall;
             *pot += amountToCall;
             player->currentBet = *currentBet;
-            player->hasCalled = 1;  // 콜을 했음을 표시
+            player->hasCalled = 1;
             printf("%s님이 콜하셨습니다.\n", player->name);
         }
         else {
             printf("콜을 할 수 없습니다. 돈이 부족합니다. 올인을 선택해야 합니다.\n");
-            handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
+            handlePlayerActionMulti(player, currentBet, pot, playerIndex, pipe_fds); // 재시도
         }
         break;
 
@@ -243,12 +252,12 @@ void handlePlayerAction(Player* player, int* currentBet, int* pot) {
         if (player->money >= *currentBet - player->currentBet + raiseAmount) {
             *pot += *currentBet - player->currentBet + raiseAmount;
             player->money -= *currentBet - player->currentBet + raiseAmount;
-            player->currentBet += raiseAmount;
+            player->currentBet = *currentBet + raiseAmount;
             printf("%s님이 %d만큼 레이즈하셨습니다.\n", player->name, raiseAmount);
         }
         else {
             printf("레이즈를 할 수 없습니다. 돈이 부족합니다.\n");
-            handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
+            handlePlayerActionMulti(player, currentBet, pot, playerIndex, pipe_fds); // 재시도
         }
     }
     break;
@@ -269,10 +278,11 @@ void handlePlayerAction(Player* player, int* currentBet, int* pot) {
 
     default:
         printf("잘못된 입력입니다. 다시 선택해주세요.\n");
-        handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
+        handlePlayerActionMulti(player, currentBet, pot, playerIndex, pipe_fds); // 재시도
         break;
     }
 }
+
 
 // 메인서버에서 while (countActivePlayers(players, PLAYER_COUNT) > 1) { 이곳에 게임을 진행하는 코드 작성해주시면 됩니다 }
 int countActivePlayers(Player players[], int playerCount) {
