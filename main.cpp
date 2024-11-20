@@ -3,7 +3,6 @@
 #include "gamelogic.h"
 #include <stdio.h>
 
-
 int main() {
     // 플레이어와 덱 초기화
     Player players[PLAYER_COUNT];
@@ -12,6 +11,7 @@ int main() {
     int currentBet = 0;
     int pot = 0;
     int deckIndex = 0;
+    int lastToRaiseIndex = 0;
 
     // 플레이어 초기화
     for (int i = 0; i < PLAYER_COUNT; i++) {
@@ -33,7 +33,7 @@ int main() {
 
         // 2. 베팅 라운드 (PREFLOP)
         printf("\n=== 프리플롭 베팅 라운드 ===\n");
-        startBettingRound(players, PLAYER_COUNT, &currentBet, &pot);
+        startBettingRound(players, PLAYER_COUNT, &currentBet, &pot, &lastToRaiseIndex);
 
         // 만약 한 명의 플레이어만 남으면 바로 승리 처리
         Player* winner = checkForFoldWinner(players, PLAYER_COUNT);
@@ -44,7 +44,7 @@ int main() {
         }
 
         // 3. 커뮤니티 카드 분배 및 각 라운드 진행
-        for (Round currentRound = FLOP; currentRound <= RIVER; currentRound = static_cast<Round>(static_cast<int>(currentRound) + 1)) {
+        for (Round currentRound = FLOP; currentRound <= RIVER; currentRound = (Round)((int)currentRound + 1)) {
             dealCommunityCards(communityCards, deck, &deckIndex, currentRound);
 
             switch (currentRound) {
@@ -61,7 +61,7 @@ int main() {
                 break;
             }
 
-            startBettingRound(players, PLAYER_COUNT, &currentBet, &pot);
+            startBettingRound(players, PLAYER_COUNT, &currentBet, &pot, &lastToRaiseIndex);
 
             // 한 명의 플레이어만 남으면 바로 승리 처리
             winner = checkForFoldWinner(players, PLAYER_COUNT);
@@ -73,15 +73,12 @@ int main() {
         }
 
         // 4. 승리자 판정
-        if (winner == NULL) {
-            winner = determineWinner(players, PLAYER_COUNT, communityCards);
-            printf("\n%s님이 승리하셨습니다! 판돈 %d를 차지합니다!\n", winner->name, pot);
-            winner->money += pot;
-        }
+        determineWinners(players, PLAYER_COUNT, communityCards, &pot);
+
+        printf("\n");
 
         // 5. 게임 초기화
         resetGame(players, PLAYER_COUNT);
-        pot = 0;
         currentBet = 0;
         deckIndex = 0;
         shuffleDeck(deck);  // 덱을 다시 셔플하여 새로운 게임 준비

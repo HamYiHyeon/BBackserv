@@ -66,11 +66,11 @@ HandEvaluation evaluateFiveCardHand(Card cards[]) {
     // 스트레이트 여부 판단
     int isStraight = 0;
     int highCard = 0;
-    for (int i = 2; i <= 10; i++) {
-        if (rankCounts[i] == 1 && rankCounts[i + 1] == 1 && rankCounts[i + 2] == 1 &&
-            rankCounts[i + 3] == 1 && rankCounts[i + 4] == 1) {
+    for (int i = 14; i >= 5; i--) {
+        if (rankCounts[i] == 1 && rankCounts[i - 1] == 1 && rankCounts[i - 2] == 1 &&
+            rankCounts[i - 3] == 1 && rankCounts[i - 4] == 1) {
             isStraight = 1;
-            highCard = i + 4;
+            highCard = i;
             break;
         }
     }
@@ -89,17 +89,19 @@ HandEvaluation evaluateFiveCardHand(Card cards[]) {
     else if (isFlush) {
         evaluation.rank = FLUSH;
         evaluation.highCard = getHighestRank(cards, 5);
+        setKickers(cards, 5, evaluation.kicker, evaluation.highCard);
     }
     else if (isStraight) {
         evaluation.rank = STRAIGHT;
         evaluation.highCard = highCard;
+        setKickers(cards, 5, evaluation.kicker, evaluation.highCard);
     }
     else {
         // 페어나 트리플 등 나머지 핸드 평가
         int fourOfAKind = 0, threeOfAKind = 0, pairs = 0;
         int kickerIndex = 0;
 
-        for (int i = 2; i <= 14; i++) {
+        for (int i = 14; i >= 2; i--) {
             if (rankCounts[i] == 4) {
                 fourOfAKind = i;
             }
@@ -173,17 +175,42 @@ HandEvaluation evaluateFiveCardHand(Card cards[]) {
         else {
             evaluation.rank = HIGH_CARD;
             evaluation.highCard = getHighestRank(cards, 5);
-
-            for (int i = 14; i >= 2; i--) {
-                if (rankCounts[i] == 1) {
-                    evaluation.kicker[kickerIndex++] = i;
-                }
-            }
+            setKickers(cards, 5, evaluation.kicker, evaluation.highCard);
         }
     }
 
     return evaluation;
 }
+
+void setKickers(Card cards[], int cardCount, int kicker[], int highCard) {
+    // 카드를 내림차순으로 정렬하여 키커 설정
+    Card sortedCards[5];
+    int sortedIndex = 0;
+
+    // 먼저 highCard를 제외한 나머지 카드를 저장합니다.
+    for (int i = 0; i < cardCount; i++) {
+        if (cards[i].rank != highCard || sortedIndex >= 4) {
+            sortedCards[sortedIndex++] = cards[i];
+        }
+    }
+
+    // 나머지 카드를 정렬합니다.
+    for (int i = 0; i < sortedIndex - 1; i++) {
+        for (int j = i + 1; j < sortedIndex; j++) {
+            if (sortedCards[j].rank > sortedCards[i].rank) {
+                Card temp = sortedCards[i];
+                sortedCards[i] = sortedCards[j];
+                sortedCards[j] = temp;
+            }
+        }
+    }
+
+    // 정렬된 카드를 kicker에 저장합니다.
+    for (int i = 0; i < sortedIndex; i++) {
+        kicker[i] = sortedCards[i].rank;
+    }
+}
+
 
 int getHighestRank(Card cards[], int cardCount) {
     int highestRank = 0;

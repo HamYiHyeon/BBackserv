@@ -35,6 +35,7 @@ HandEvaluation evaluateHand(Card playerCards[], Card communityCards[]);
 void getCombinations(Card cards[], int numCards, Card combination[], int index, int start, int comboSize, HandEvaluation* bestEvaluation);
 HandEvaluation evaluateFiveCardHand(Card cards[]);
 int getHighestRank(Card cards[], int cardCount);
+void setKickers(Card cards[], int cardCount, int kicker[], int highCard);
 
 
 #endif
