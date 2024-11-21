@@ -135,7 +135,17 @@ void startBettingRoundMulti(Player players[], int playerCount, int* currentBet, 
             // 플레이어의 행동 처리
             handlePlayerActionMulti(&players[i], currentBet, pot, i, pipe_fds);
 
+            // 플레이어의 행동 결과를 파이프를 통해 전달받음
+            int updatedCurrentBet, updatedPot, action;
+            read(pipe_fds[i][0], &action, sizeof(int));
+            read(pipe_fds[i][0], &updatedCurrentBet, sizeof(int));
+            read(pipe_fds[i][0], &updatedPot, sizeof(int));
+
             // 행동 후 처리 결과 확인
+
+            *currentBet = updatedCurrentBet;
+            *pot = updatedPot;
+
             if (players[i].currentBet > *currentBet) {
                 // 레이즈가 발생한 경우
                 *currentBet = players[i].currentBet;
@@ -202,8 +212,6 @@ void startBettingRoundMulti(Player players[], int playerCount, int* currentBet, 
     *currentBet = 0; // 다음 라운드를 위해 현재 베팅 금액 초기화
 }
 
-
-// 플레이어의 액션 처리 함수: 베팅, 콜, 폴드 등을 처리
 // 멀티프로세스용 플레이어 행동 처리 함수
 void handlePlayerActionMulti(Player* player, int* currentBet, int* pot, int playerIndex, int pipe_fds[][2]) {
     int action;
@@ -281,6 +289,11 @@ void handlePlayerActionMulti(Player* player, int* currentBet, int* pot, int play
         handlePlayerActionMulti(player, currentBet, pot, playerIndex, pipe_fds); // 재시도
         break;
     }
+
+    // 플레이어의 행동 결과를 파이프를 통해 전달
+    write(pipe_fds[playerIndex][1], &action, sizeof(int));
+    write(pipe_fds[playerIndex][1], currentBet, sizeof(int));
+    write(pipe_fds[playerIndex][1], pot, sizeof(int));
 }
 
 
