@@ -1,12 +1,8 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "gamelogic.h"
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <fcntl.h>
 
 // 덱 초기화 함수: 52장의 카드를 초기화
 void initializeDeck(Card deck[]) {
@@ -136,8 +132,7 @@ void startBettingRound(Player players[], int playerCount, int* currentBet, int* 
             // 플레이어의 행동 처리
             int amountToCall = *currentBet - players[i].currentBet;
             printf("%s님의 차례입니다. 현재 베팅 금액: %d, 콜하려면 %d가 필요합니다.\n", players[i].name, *currentBet, amountToCall);
-
-            handlePlayerAction(&players[i], currentBet, pot, i, pipe_fds, player_pids);
+            handlePlayerAction(&players[i], currentBet, pot);
 
             // 레이즈가 발생한 경우, 마지막으로 레이즈한 플레이어 기록 및 모든 플레이어의 hasCalled 초기화
             if (players[i].currentBet > *currentBet) {
@@ -204,13 +199,10 @@ void startBettingRound(Player players[], int playerCount, int* currentBet, int* 
 }
 
 // 플레이어의 액션 처리 함수: 베팅, 콜, 폴드 등을 처리
-void handlePlayerAction(Player* player, int* currentBet, int* pot, int playerIndex, int pipe_fds[][2], pid_t player_pids[]) {
-    // 시그널 전송하여 해당 플레이어의 차례임을 알림
-    kill(player_pids[playerIndex], SIGUSR1);
-
-    // 파이프로 데이터 읽기
+void handlePlayerAction(Player* player, int* currentBet, int* pot) {
     int action;
-    read(pipe_fds[playerIndex][0], &action, sizeof(int)); // 자식 프로세스로부터 행동 값을 읽어옴
+    printf("행동을 선택하세요: (1) 체크, (2) 콜, (3) 레이즈, (4) 폴드, (5) 올인: ");
+    scanf("%d", &action);
 
     switch (action) {
     case 1: // 체크
@@ -219,7 +211,7 @@ void handlePlayerAction(Player* player, int* currentBet, int* pot, int playerInd
         }
         else {
             printf("체크를 할 수 없습니다. 현재 베팅 금액이 있습니다.\n");
-            handlePlayerAction(player, currentBet, pot, playerIndex, pipe_fds, player_pids);
+            handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
         }
         break;
 
@@ -227,7 +219,7 @@ void handlePlayerAction(Player* player, int* currentBet, int* pot, int playerInd
         if (*currentBet == 0) {
             // 현재 베팅 금액이 0일 때는 콜이 아닌 체크만 가능함
             printf("현재 베팅 금액이 0이므로 체크만 가능합니다.\n");
-            handlePlayerAction(player, currentBet, pot, playerIndex, pipe_fds, player_pids);
+            handlePlayerAction(player, currentBet, pot);
         }
         else if (player->money >= *currentBet - player->currentBet) {
             int amountToCall = *currentBet - player->currentBet;
@@ -239,7 +231,7 @@ void handlePlayerAction(Player* player, int* currentBet, int* pot, int playerInd
         }
         else {
             printf("콜을 할 수 없습니다. 돈이 부족합니다. 올인을 선택해야 합니다.\n");
-            handlePlayerAction(player, currentBet, pot, playerIndex, pipe_fds, player_pids);
+            handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
         }
         break;
 
@@ -256,7 +248,7 @@ void handlePlayerAction(Player* player, int* currentBet, int* pot, int playerInd
         }
         else {
             printf("레이즈를 할 수 없습니다. 돈이 부족합니다.\n");
-            handlePlayerAction(player, currentBet, pot, playerIndex, pipe_fds, player_pids);
+            handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
         }
     }
     break;
@@ -277,7 +269,7 @@ void handlePlayerAction(Player* player, int* currentBet, int* pot, int playerInd
 
     default:
         printf("잘못된 입력입니다. 다시 선택해주세요.\n");
-        handlePlayerAction(player, currentBet, pot, playerIndex, pipe_fds, player_pids);
+        handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
         break;
     }
 }
