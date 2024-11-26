@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
+#include "shared_memory.h"
 
 // 덱 초기화 함수: 52장의 카드를 초기화
 void initializeDeck(Card deck[]) {

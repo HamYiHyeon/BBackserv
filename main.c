@@ -1,3 +1,4 @@
+#include "shared_memory.h"
 #include "Card.h"
 #include "gamelogic.h"
 #include <stdio.h>
@@ -5,39 +6,60 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 
 #define SHM_KEY 1234
+int player_in_fds[PLAYER_COUNT];
+int player_out_fds[PLAYER_COUNT];
 
-typedef struct {
-    pid_t player_pids[PLAYER_COUNT];
-    int player_connected[PLAYER_COUNT];  // 0: 연결 안됨, 1: 연결됨
-    int action[5]
-} SharedMemory;
+const char* player_in_pipes[PLAYER_COUNT] = {
+    "player1_in.fifo", "player2_in.fifo", "player3_in.fifo", "player4_in.fifo"
+};
+const char* player_out_pipes[PLAYER_COUNT] = {
+    "player1_out.fifo", "player2_out.fifo", "player3_out.fifo", "player4_out.fifo"
+};
 
 int main() {
     int shmid;
     SharedMemory* shm;
 
-    // 공유 메모리 생성
+    // 공유 메모리 생성 및 연결
     shmid = shmget(SHM_KEY, sizeof(SharedMemory), IPC_CREAT | 0666);
     if (shmid < 0) {
         perror("shmget 실패");
         exit(1);
     }
 
-    // 공유 메모리 연결
     shm = (SharedMemory*)shmat(shmid, NULL, 0);
     if (shm == (SharedMemory*)-1) {
         perror("shmat 실패");
         exit(1);
     }
 
-    // 초기화
+    // 공유 메모리 초기화
     for (int i = 0; i < PLAYER_COUNT; i++) {
         shm->player_pids[i] = 0;
         shm->player_connected[i] = 0;
+    }
+
+    // 파이프 파일 존재하지 않으면 생성하고 존재하면 생성하지 않음
+    for (int i = 0; i < PLAYER_COUNT; i++) {
+        if (access(player_in_pipes[i], F_OK) == -1) {
+            if (mkfifo(player_in_pipes[i], 0666) == -1) {
+                perror("파이프 생성 실패");
+                exit(1);
+            }
+        }
+
+        if (access(player_out_pipes[i], F_OK) == -1) {
+            if (mkfifo(player_out_pipes[i], 0666) == -1) {
+                perror("파이프 생성 실패");
+                exit(1);
+            }
+        }
     }
 
     // 플레이어 연결 대기
@@ -55,6 +77,19 @@ int main() {
     }
 
     printf("모든 플레이어가 입장했습니다. 게임을 시작합니다...\n");
+
+    // 각 플레이어와 통신하기 위한 파이프 열기
+    for (int i = 0; i < PLAYER_COUNT; i++) {
+        player_in_fds[i] = open(player_in_pipes[i], O_RDONLY);
+        player_out_fds[i] = open(player_out_pipes[i], O_WRONLY);
+
+        if (player_in_fds[i] == -1 || player_out_fds[i] == -1) {
+            perror("파이프 열기 실패");
+            exit(1);
+        }
+    }
+    // 디버깅용
+    printf("파이프 연결 성공");
     // 플레이어와 덱 초기화
     Player players[PLAYER_COUNT];
     Card deck[DECK_SIZE];
@@ -66,8 +101,15 @@ int main() {
 
     // 플레이어 초기화
     for (int i = 0; i < PLAYER_COUNT; i++) {
-        printf("플레이어 %d 이름을 입력하세요: ", i + 1);
-        scanf("%s", players[i].name);
+        char message[256];
+        char buffer[256];
+        printf("플레이어에게 이름을 입력받습니다");
+        snprintf(message, sizeof(message), "플레이어 %d 이름을 입력하세요: ", i + 1);
+        write(player_out_fds[i], message, strlen(message) + 1);
+
+        if (read(player_in_fds[i], buffer, sizeof(buffer)) > 0)
+            strcpy(players[i].name, buffer);
+
         players[i].money = 1000;  // 각 플레이어 초기 금액
         players[i].isActive = 1;  // 모든 플레이어는 처음에 활성 상태
         players[i].isAllIn = 0;

@@ -2,6 +2,7 @@
 #define GAMELOGIC_H
 
 #include "Card.h"
+#include "shared_memory.h"
 
 /* 게임 진행에 관련된 로직입니다. */
 
