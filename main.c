@@ -88,8 +88,6 @@ int main() {
             exit(1);
         }
     }
-    // 디버깅용
-    printf("파이프 연결 성공");
     // 플레이어와 덱 초기화
     Player players[PLAYER_COUNT];
     Card deck[DECK_SIZE];
@@ -103,7 +101,7 @@ int main() {
     for (int i = 0; i < PLAYER_COUNT; i++) {
         char message[256];
         char buffer[256];
-        printf("플레이어에게 이름을 입력받습니다");
+
         snprintf(message, sizeof(message), "플레이어 %d 이름을 입력하세요: ", i + 1);
         write(player_out_fds[i], message, strlen(message) + 1);
 

@@ -57,12 +57,12 @@ int main(int argc, char* argv[]) {
         char buffer[256];
 
         // 메인 프로세스로부터 메시지 읽기
-        if (read(fd_in, buffer, sizeof(buffer)) > 0) {
+        if (read(fd_out, buffer, sizeof(buffer)) > 0) {
             printf("받은 메시지: %s\n", buffer);
 
             char message[256];
             scanf("%s", message);
-            write(fd_out, message, strlen(message) + 1);
+            write(fd_in, message, strlen(message) + 1);
         }
     }
 
