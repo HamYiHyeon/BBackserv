@@ -10,10 +10,6 @@
 #include <string.h>
 
 #define SHM_KEY 1234
-char buffer[256];
-char message[256];
-int bet_num;
-int raise_amount;
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -58,24 +54,15 @@ int main(int argc, char* argv[]) {
 
     // 메인 프로세스와 통신 시작
     while (1) {
+        char buffer[256];
+
         // 메인 프로세스로부터 메시지 읽기
         if (read(fd_out, buffer, sizeof(buffer)) > 0) {
-            printf("%s\n", buffer);
+            printf("받은 메시지: %s\n", buffer);
 
-
-            // 메세지 유형을 확인
-            if (strncmp(buffer, "INPUT", 5) == 0) {
-                scanf("%s", message);
-                write(fd_in, message, strlen(message) + 1);
-            }
-            else if (strncmp(buffer, "BET", 3) == 0) {
-                scanf("%d", &bet_num);
-                write(fd_in, &bet_num, sizeof(bet_num));
-            }
-            else if (strncmp(buffer, "RAISE", 5) == 0) {
-                scanf("%d", &raise_amount);
-                write(fd_in, &raise_amount, sizeof(raise_amount));
-            }
+            char message[256];
+            scanf("%s", message);
+            write(fd_in, message, strlen(message) + 1);
         }
     }
 

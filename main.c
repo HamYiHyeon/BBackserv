@@ -23,9 +23,6 @@ const char* player_out_pipes[PLAYER_COUNT] = {
     "player1_out.fifo", "player2_out.fifo", "player3_out.fifo", "player4_out.fifo"
 };
 
-char message[256];
-char buffer[256];
-
 int main() {
     int shmid;
     SharedMemory* shm;
@@ -101,8 +98,18 @@ int main() {
     int deckIndex = 0;
     int lastToRaiseIndex = 0;
 
+<<<<<<< HEAD
 
     // 여기서부터 자식 프로세스 생성
+=======
+    // 플레이어 초기화
+    for (int i = 0; i < PLAYER_COUNT; i++) {
+        char message[256];
+        char buffer[256];
+
+        snprintf(message, sizeof(message), "플레이어 %d 이름을 입력하세요: ", i + 1);
+        write(player_out_fds[i], message, strlen(message) + 1);
+>>>>>>> parent of 39a9c91 (.)
 
 
     pid_t pid = fork();
@@ -113,6 +120,7 @@ int main() {
     else if (pid == 0) { // 자식 프로세스
         printf("자식 프로세스에서 게임을 진행합니다...\n");
 
+<<<<<<< HEAD
         // 플레이어 이름 입력받기
         printf("플레이어 이름 입력받는중..\n");
         for (int i = 0; i < PLAYER_COUNT; i++) {
@@ -143,19 +151,59 @@ int main() {
             for (int i = 0; i < PLAYER_COUNT; i++) {
                 snprintf(message, sizeof(message), "ROUND \n=== 프리플롭 베팅 라운드 ===\n차례를 기다려주세요.\n");
                 write(player_out_fds[i], message, strlen(message) + 1);
+=======
+    // 덱 초기화 및 셔플
+    initializeDeck(deck);
+    shuffleDeck(deck);
+
+    // 게임 진행 루프
+    while (countActivePlayers(players, PLAYER_COUNT) > 1) {
+        // 1. 홀 카드 분배
+        dealHoleCards(players, PLAYER_COUNT, deck, &deckIndex);
+
+        // 2. 베팅 라운드 (PREFLOP)
+        printf("\n=== 프리플롭 베팅 라운드 ===\n");
+        startBettingRound(players, PLAYER_COUNT, &currentBet, &pot, &lastToRaiseIndex);
+
+        // 만약 한 명의 플레이어만 남으면 바로 승리 처리
+        Player* winner = checkForFoldWinner(players, PLAYER_COUNT);
+        if (winner != NULL) {
+            printf("\n%s님이 폴드하지 않고 남아있어 승리하셨습니다! 판돈 %d를 차지합니다!\n", winner->name, pot);
+            winner->money += pot;
+            continue;  // 게임 루프 재시작
+        }
+
+        // 3. 커뮤니티 카드 분배 및 각 라운드 진행
+        for (Round currentRound = FLOP; currentRound <= RIVER; currentRound = (Round)((int)currentRound + 1)) {
+            dealCommunityCards(communityCards, deck, &deckIndex, currentRound);
+
+            switch (currentRound) {
+            case FLOP:
+                printf("\n=== 플롭 베팅 라운드 ===\n");
+                break;
+            case TURN:
+                printf("\n=== 턴 베팅 라운드 ===\n");
+                break;
+            case RIVER:
+                printf("\n=== 리버 베팅 라운드 ===\n");
+                break;
+            default:
+                break;
+>>>>>>> parent of 39a9c91 (.)
             }
-            sleep(2);
+
             startBettingRound(players, PLAYER_COUNT, &currentBet, &pot, &lastToRaiseIndex);
 
+<<<<<<< HEAD
             // 만약 한 명의 플레이어만 남으면 바로 승리 처리
             sleep(2);
             Player* winner = checkForFoldWinner(players, PLAYER_COUNT);
+=======
+            // 한 명의 플레이어만 남으면 바로 승리 처리
+            winner = checkForFoldWinner(players, PLAYER_COUNT);
+>>>>>>> parent of 39a9c91 (.)
             if (winner != NULL) {
                 printf("\n%s님이 폴드하지 않고 남아있어 승리하셨습니다! 판돈 %d를 차지합니다!\n", winner->name, pot);
-                for (int i = 0; i < PLAYER_COUNT; i++) {
-                    snprintf(message, sizeof(message), "\n%s님이 폴드하지 않고 남아있어 승리하셨습니다! 판돈 %d를 차지합니다!\n", winner->name, pot);
-                    write(player_out_fds[i], message, strlen(message) + 1);
-                }
                 winner->money += pot;
                 continue;  // 게임 루프 재시작
             }
@@ -221,6 +269,7 @@ int main() {
             deckIndex = 0;
             shuffleDeck(deck);  // 덱을 다시 셔플하여 새로운 게임 준비
         }
+<<<<<<< HEAD
         sleep(2);
         // 최종 우승자 출력
         for (int i = 0; i < PLAYER_COUNT; i++) {
@@ -232,6 +281,26 @@ int main() {
                 }
                 break;
             }
+=======
+
+        // 4. 승리자 판정
+        determineWinners(players, PLAYER_COUNT, communityCards, &pot);
+
+        printf("\n");
+
+        // 5. 게임 초기화
+        resetGame(players, PLAYER_COUNT);
+        currentBet = 0;
+        deckIndex = 0;
+        shuffleDeck(deck);  // 덱을 다시 셔플하여 새로운 게임 준비
+    }
+
+    // 최종 우승자 출력
+    for (int i = 0; i < PLAYER_COUNT; i++) {
+        if (players[i].isActive && players[i].money > 0) {
+            printf("\n게임 종료! 최종 우승자는 %s입니다.\n", players[i].name);
+            break;
+>>>>>>> parent of 39a9c91 (.)
         }
         exit(0); // 여기에서 자식 프로세스 종료함
     }

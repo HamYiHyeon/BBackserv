@@ -37,7 +37,7 @@ void shuffleDeck(Card deck[]);     // 덱 셔플
 void dealHoleCards(Player players[], int playerCount, Card deck[], int* deckIndex);  // 홀 카드 분배
 void dealCommunityCards(Card communityCards[], Card deck[], int* deckIndex, Round currentRound);  // 커뮤니티 카드 분배
 void startBettingRound(Player players[], int playerCount, int* currentBet, int* pot, int* lastToRaiseIndex);  // 베팅 라운드 진행
-void handlePlayerAction(Player* player, int* currentBet, int* pot, int playerIndex);  // 플레이어의 행동 처리
+void handlePlayerAction(Player* player, int* currentBet, int* pot);  // 플레이어의 행동 처리
 void determineWinners(Player players[], int playerCount, Card communityCards[], int* pot);  // 승리자 판정
 void resetGame(Player players[], int playerCount);  // 게임 초기화
 int countActivePlayers(Player players[], int playerCount);  // 활성 플레이어 수를 카운트
