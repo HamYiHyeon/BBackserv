@@ -170,8 +170,9 @@ void startBettingRound(Player players[], int playerCount, int* currentBet, int* 
             handlePlayerAction(&players[i], currentBet, pot, i);
 
             // 레이즈가 발생한 경우, 마지막으로 레이즈한 플레이어 기록 및 모든 플레이어의 hasCalled 초기화
-            if (players[i].currentBet > *currentBet) {
-                *currentBet = players[i].currentBet;
+            if (players[i].currentBet > *currentBet || (players[i].isAllIn && (players[i].currentBet > *currentBet))) {
+                if (players[i].currentBet > *currentBet) *currentBet = players[i].currentBet;
+
                 *lastToRaiseIndex = i;
 
                 // 모든 플레이어의 hasCalled와 hasChecked를 0으로 설정
@@ -399,7 +400,7 @@ Player* checkForFoldWinner(Player players[], int playerCount) {
     Player* lastPlayer = NULL;
 
     for (int i = 0; i < playerCount; i++) {
-        if (players[i].isActive && players[i].money > 0) {
+        if (players[i].isActive > 0) {
             activePlayerCount++;
             lastPlayer = &players[i];
         }
