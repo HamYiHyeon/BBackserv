@@ -4,6 +4,13 @@
 #include <time.h>
 #include <stdio.h>
 #include "shared_memory.h"
+#include <unistd.h>
+#include <sys/ipc.h> 
+#include <sys/shm.h>
+#include <string.h>
+
+char message[256];
+char buffer[256];
 
 // 덱 초기화 함수: 52장의 카드를 초기화
 void initializeDeck(Card deck[]) {
@@ -67,6 +74,12 @@ void dealHoleCards(Player players[], int playerCount, Card deck[], int* deckInde
             players[i].name,
             getRankString(players[i].holeCards[0].rank), getSuitString(players[i].holeCards[0].suit),
             getRankString(players[i].holeCards[1].rank), getSuitString(players[i].holeCards[1].suit));
+
+        snprintf(message, sizeof(message), "%s님의 홀 카드: [%s %s], [%s %s]\n",
+            players[i].name,
+            getRankString(players[i].holeCards[0].rank), getSuitString(players[i].holeCards[0].suit),
+            getRankString(players[i].holeCards[1].rank), getSuitString(players[i].holeCards[1].suit));
+        write(player_out_fds[i], message, strlen(message) + 1);
     }
 }
 
@@ -82,22 +95,38 @@ void dealCommunityCards(Card communityCards[], Card deck[], int* deckIndex, Roun
             getRankString(communityCards[0].rank), getSuitString(communityCards[0].suit),
             getRankString(communityCards[1].rank), getSuitString(communityCards[1].suit),
             getRankString(communityCards[2].rank), getSuitString(communityCards[2].suit));
+        for (int i = 0; i < PLAYER_COUNT; i++) {
+            snprintf(message, sizeof(message), "플랍 단계: 커뮤니티 카드 3장이 공개되었습니다: [%s %s], [%s %s], [%s %s]\n",
+                getRankString(communityCards[0].rank), getSuitString(communityCards[0].suit),
+                getRankString(communityCards[1].rank), getSuitString(communityCards[1].suit),
+                getRankString(communityCards[2].rank), getSuitString(communityCards[2].suit));
+            write(player_out_fds[i], message, strlen(message) + 1);
+        }
         break;
     case TURN:
         communityCards[3] = deck[(*deckIndex)++];
         printf("턴 단계: 커뮤니티 카드 1장이 추가로 공개되었습니다: [%s %s]\n",
             getRankString(communityCards[3].rank), getSuitString(communityCards[3].suit));
+        for (int i = 0; i < PLAYER_COUNT; i++) {
+            snprintf(message, sizeof(message), "턴 단계: 커뮤니티 카드 1장이 추가로 공개되었습니다: [%s %s]\n",
+                getRankString(communityCards[3].rank), getSuitString(communityCards[3].suit));
+            write(player_out_fds[i], message, strlen(message) + 1);
+        }
         break;
     case RIVER:
         communityCards[4] = deck[(*deckIndex)++];
         printf("리버 단계: 마지막 커뮤니티 카드 1장이 공개되었습니다: [%s %s]\n",
             getRankString(communityCards[4].rank), getSuitString(communityCards[4].suit));
+        for (int i = 0; i < PLAYER_COUNT; i++) {
+            snprintf(message, sizeof(message), "리버 단계: 마지막 커뮤니티 카드 1장이 공개되었습니다: [%s %s]\n",
+                getRankString(communityCards[4].rank), getSuitString(communityCards[4].suit));
+            write(player_out_fds[i], message, strlen(message) + 1);
+        }
         break;
     default:
         break;
     }
 }
-
 
 // 베팅 라운드 진행 함수: 각 플레이어가 베팅, 콜, 폴드 등의 액션을 진행
 void startBettingRound(Player players[], int playerCount, int* currentBet, int* pot, int* lastToRaiseIndex) {
@@ -132,12 +161,18 @@ void startBettingRound(Player players[], int playerCount, int* currentBet, int* 
 
             // 플레이어의 행동 처리
             int amountToCall = *currentBet - players[i].currentBet;
+            sleep(1);
             printf("%s님의 차례입니다. 현재 베팅 금액: %d, 콜하려면 %d가 필요합니다.\n", players[i].name, *currentBet, amountToCall);
-            handlePlayerAction(&players[i], currentBet, pot);
+            snprintf(message, sizeof(message), "%s님의 차례입니다. 현재 베팅 금액: %d, 콜하려면 %d가 필요합니다.\n", players[i].name, *currentBet, amountToCall);
+            write(player_out_fds[i], message, strlen(message) + 1);
+            sleep(1);
+
+            handlePlayerAction(&players[i], currentBet, pot, i);
 
             // 레이즈가 발생한 경우, 마지막으로 레이즈한 플레이어 기록 및 모든 플레이어의 hasCalled 초기화
-            if (players[i].currentBet > *currentBet) {
-                *currentBet = players[i].currentBet;
+            if (players[i].currentBet > *currentBet || (players[i].isAllIn && (players[i].currentBet > *currentBet))) {
+                if (players[i].currentBet > *currentBet) *currentBet = players[i].currentBet;
+
                 *lastToRaiseIndex = i;
 
                 // 모든 플레이어의 hasCalled와 hasChecked를 0으로 설정
@@ -186,12 +221,18 @@ void startBettingRound(Player players[], int playerCount, int* currentBet, int* 
 
         // 모든 플레이어가 레이즈에 맞췄다면 반복 종료
         if (allCalled) {
+            sleep(1);
             break;
         }
 
         // 모든 플레이어가 체크했을 경우 다음 라운드로 넘어감
         if (allChecked && *currentBet == 0) {
+            sleep(1);
             printf("모든 플레이어가 체크했습니다. 다음 라운드로 넘어갑니다.\n");
+            for (int i = 0; i < PLAYER_COUNT; i++) {
+                snprintf(message, sizeof(message), "모든 플레이어가 체크했습니다. 다음 라운드로 넘어갑니다.\n");
+                write(player_out_fds[i], message, strlen(message) + 1);
+            }
             break;
         }
     }
@@ -200,99 +241,166 @@ void startBettingRound(Player players[], int playerCount, int* currentBet, int* 
 }
 
 // 플레이어의 액션 처리 함수: 베팅, 콜, 폴드 등을 처리
-void handlePlayerAction(Player* player, int* currentBet, int* pot) {
+void handlePlayerAction(Player* player, int* currentBet, int* pot, int playerIndex) {
+    snprintf(message, sizeof(message), "BET 행동을 선택하세요: (1) 체크, (2) 콜, (3) 레이즈, (4) 폴드, (5) 올인: ");
+    write(player_out_fds[playerIndex], message, strlen(message) + 1);
+
     int action;
-    printf("행동을 선택하세요: (1) 체크, (2) 콜, (3) 레이즈, (4) 폴드, (5) 올인: ");
-    scanf("%d", &action);
+    if (read(player_in_fds[playerIndex], &action, sizeof(action)) > 0) {
+        switch (action) {
+        case 1: // 체크
+            if (*currentBet == player->currentBet) {
+                printf("%s님이 체크하셨습니다.\n", player->name);
+                for (int i = 0; i < PLAYER_COUNT; i++) {
+                    snprintf(message, sizeof(message), "%s님이 체크하셨습니다.\n", player->name);
+                    write(player_out_fds[i], message, strlen(message) + 1);
+                }
+                sleep(1);
+                snprintf(message, sizeof(message), "다른 플레이어 배팅중..");
+                write(player_out_fds[playerIndex], message, strlen(message) + 1);
+                sleep(1);
+            }
+            else {
+                printf("체크를 할 수 없습니다. 현재 베팅 금액이 있습니다.\n");
+                snprintf(message, sizeof(message), "체크를 할 수 없습니다. 현재 베팅 금액이 있습니다.\n");
+                write(player_out_fds[playerIndex], message, strlen(message) + 1);
+                sleep(1);
+                handlePlayerAction(player, currentBet, pot, playerIndex); // 다시 선택하도록 재귀 호출
+            }
+            break;
 
-    switch (action) {
-    case 1: // 체크
-        if (*currentBet == player->currentBet) {
-            printf("%s님이 체크하셨습니다.\n", player->name);
-        }
-        else {
-            printf("체크를 할 수 없습니다. 현재 베팅 금액이 있습니다.\n");
-            handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
+        case 2: // 콜
+            if (*currentBet == 0) {
+                // 현재 베팅 금액이 0일 때는 콜이 아닌 체크만 가능함
+                printf("현재 베팅 금액이 0이므로 체크만 가능합니다.\n");
+                snprintf(message, sizeof(message), "현재 베팅 금액이 0이므로 체크만 가능합니다.\n");
+                write(player_out_fds[playerIndex], message, strlen(message) + 1);
+                sleep(1);
+                handlePlayerAction(player, currentBet, pot, playerIndex);
+            }
+            else if (player->money >= *currentBet - player->currentBet) {
+                int amountToCall = *currentBet - player->currentBet;
+                player->money -= amountToCall;
+                *pot += amountToCall;
+                player->currentBet = *currentBet;
+                player->hasCalled = 1;  // 콜을 했음을 표시
+                printf("%s님이 콜하셨습니다.\n", player->name);
+                for (int i = 0; i < PLAYER_COUNT; i++) {
+                    snprintf(message, sizeof(message), "%s님이 콜하셨습니다.\n", player->name);
+                    write(player_out_fds[i], message, strlen(message) + 1);
+                }
+                sleep(1);
+                snprintf(message, sizeof(message), "당신이 현재 가지고 있는 금액: %d원\n", player->money);
+                write(player_out_fds[playerIndex], message, strlen(message) + 1);
+                sleep(1);
+                snprintf(message, sizeof(message), "다른 플레이어 배팅중..");
+                write(player_out_fds[playerIndex], message, strlen(message) + 1);
+                sleep(1);
+            }
+            else {
+                printf("콜을 할 수 없습니다. 돈이 부족합니다. 올인을 선택해야 합니다.\n");
+                snprintf(message, sizeof(message), "콜을 할 수 없습니다. 돈이 부족합니다. 올인을 선택해야 합니다.\n");
+                write(player_out_fds[playerIndex], message, strlen(message) + 1);
+                sleep(1);
+                handlePlayerAction(player, currentBet, pot, playerIndex); // 다시 선택하도록 재귀 호출
+            }
+            break;
+
+        case 3: // 레이즈
+        {
+            int raiseAmount;
+            sleep(1);
+            printf("레이즈 하셨습니다. 돈 입력중.. ");
+            snprintf(message, sizeof(message), "RAISE 얼마를 레이즈 하시겠습니까?: ");
+            write(player_out_fds[playerIndex], message, strlen(message) + 1);
+            if (read(player_in_fds[playerIndex], &raiseAmount, sizeof(raiseAmount)) > 0) {
+                if (player->money >= *currentBet - player->currentBet + raiseAmount) {
+                    *pot += *currentBet - player->currentBet + raiseAmount;
+                    player->money -= *currentBet - player->currentBet + raiseAmount;
+                    player->currentBet += raiseAmount;
+                    printf("%s님이 %d만큼 레이즈하셨습니다.\n", player->name, raiseAmount);
+                    for (int i = 0; i < PLAYER_COUNT; i++) {
+                        snprintf(message, sizeof(message), "%s님이 %d만큼 레이즈하셨습니다.\n", player->name, raiseAmount);
+                        write(player_out_fds[i], message, strlen(message) + 1);
+                    }
+                    sleep(1);
+                    snprintf(message, sizeof(message), "당신이 현재 가지고 있는 금액: %d원\n", player->money);
+                    write(player_out_fds[playerIndex], message, strlen(message) + 1);
+                    sleep(1);
+                    snprintf(message, sizeof(message), "다른 플레이어 배팅중..");
+                    write(player_out_fds[playerIndex], message, strlen(message) + 1);
+                    sleep(1);
+                }
+                else {
+                    printf("레이즈를 할 수 없습니다. 돈이 부족합니다.\n");
+                    snprintf(message, sizeof(message), "레이즈를 할 수 없습니다. 돈이 부족합니다.\n");
+                    write(player_out_fds[playerIndex], message, strlen(message) + 1);
+                    sleep(1);
+                    handlePlayerAction(player, currentBet, pot, playerIndex); // 다시 선택하도록 재귀 호출
+                }
+            }
         }
         break;
 
-    case 2: // 콜
-        if (*currentBet == 0) {
-            // 현재 베팅 금액이 0일 때는 콜이 아닌 체크만 가능함
-            printf("현재 베팅 금액이 0이므로 체크만 가능합니다.\n");
-            handlePlayerAction(player, currentBet, pot);
-        }
-        else if (player->money >= *currentBet - player->currentBet) {
-            int amountToCall = *currentBet - player->currentBet;
-            player->money -= amountToCall;
-            *pot += amountToCall;
-            player->currentBet = *currentBet;
-            player->hasCalled = 1;  // 콜을 했음을 표시
-            printf("%s님이 콜하셨습니다.\n", player->name);
-        }
-        else {
-            printf("콜을 할 수 없습니다. 돈이 부족합니다. 올인을 선택해야 합니다.\n");
-            handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
-        }
-        break;
+        case 4: // 폴드
+            player->isActive = 0;
+            printf("%s님이 폴드하셨습니다.\n", player->name);
+            for (int i = 0; i < PLAYER_COUNT; i++) {
+                snprintf(message, sizeof(message), "%s님이 폴드하셨습니다.\n", player->name);
+                write(player_out_fds[i], message, strlen(message) + 1);
+            }
+            sleep(1);
+            snprintf(message, sizeof(message), "다른 플레이어 배팅중..");
+            write(player_out_fds[playerIndex], message, strlen(message) + 1);
+            sleep(1);
+            break;
 
-    case 3: // 레이즈
-    {
-        int raiseAmount;
-        printf("얼마를 레이즈 하시겠습니까?: ");
-        scanf("%d", &raiseAmount);
-        if (player->money >= *currentBet - player->currentBet + raiseAmount) {
-            *pot += *currentBet - player->currentBet + raiseAmount;
-            player->money -= *currentBet - player->currentBet + raiseAmount;
-            player->currentBet += raiseAmount;
-            printf("%s님이 %d만큼 레이즈하셨습니다.\n", player->name, raiseAmount);
+        case 5: // 올인
+            *pot += player->money;
+            player->currentBet += player->money;
+            player->money = 0;
+            *currentBet = (player->currentBet > *currentBet) ? player->currentBet : *currentBet;
+            player->isAllIn = 1;
+            printf("%s님이 올인하셨습니다.\n", player->name);
+            for (int i = 0; i < PLAYER_COUNT; i++) {
+                snprintf(message, sizeof(message), "%s님이 올인하셨습니다.\n", player->name);
+                write(player_out_fds[i], message, strlen(message) + 1);
+            }
+            sleep(1);
+            snprintf(message, sizeof(message), "다른 플레이어 배팅중..");
+            write(player_out_fds[playerIndex], message, strlen(message) + 1);
+            sleep(1);
+            break;
+
+        default:
+            printf("잘못된 입력입니다. 다시 선택해주세요.\n");
+            snprintf(message, sizeof(message), "잘못된 입력입니다. 다시 선택해주세요.\n");
+            write(player_out_fds[playerIndex], message, strlen(message) + 1);
+            sleep(1);
+            handlePlayerAction(player, currentBet, pot, playerIndex);
+            break;
         }
-        else {
-            printf("레이즈를 할 수 없습니다. 돈이 부족합니다.\n");
-            handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
-        }
-    }
-    break;
-
-    case 4: // 폴드
-        player->isActive = 0;
-        printf("%s님이 폴드하셨습니다.\n", player->name);
-        break;
-
-    case 5: // 올인
-        *pot += player->money;
-        player->currentBet += player->money;
-        player->money = 0;
-        *currentBet = (player->currentBet > *currentBet) ? player->currentBet : *currentBet;
-        player->isAllIn = 1;
-        printf("%s님이 올인하셨습니다.\n", player->name);
-        break;
-
-    default:
-        printf("잘못된 입력입니다. 다시 선택해주세요.\n");
-        handlePlayerAction(player, currentBet, pot); // 다시 선택하도록 재귀 호출
-        break;
     }
 }
 
-// 메인서버에서 while (countActivePlayers(players, PLAYER_COUNT) > 1) { 이곳에 게임을 진행하는 코드 작성해주시면 됩니다 }
 int countActivePlayers(Player players[], int playerCount) {
     int activeCount = 0;
     for (int i = 0; i < playerCount; i++) {
-        if (players[i].isActive && players[i].money > 0) {
+        if (players[i].money > 0) {
             activeCount++;
+            players[i].isActive = 1;
         }
     }
     return activeCount;
 }
 
-// 한명을 제외한 모든 플레이어가 폴드 했을 시 한명을 승리자로 결정(플레이어가 폴드 할 떄마다 호출해주시면 됩니다)
+// 한명을 제외한 모든 플레이어가 폴드 했을 시 한명을 승리자로 결정
 Player* checkForFoldWinner(Player players[], int playerCount) {
     int activePlayerCount = 0;
     Player* lastPlayer = NULL;
 
     for (int i = 0; i < playerCount; i++) {
-        if (players[i].isActive && players[i].money > 0) {
+        if (players[i].isActive > 0) {
             activePlayerCount++;
             lastPlayer = &players[i];
         }
@@ -300,7 +408,12 @@ Player* checkForFoldWinner(Player players[], int playerCount) {
 
     // 활성 상태인 플레이어가 한 명이면 그 플레이어가 승자
     if (activePlayerCount == 1) {
+        sleep(1);
         printf("\n%s님이 폴드하지 않고 남아있어 승리하셨습니다!\n", lastPlayer->name);
+        for (int i = 0; i < PLAYER_COUNT; i++) {
+            snprintf(message, sizeof(message), "\n%s님이 폴드하지 않고 남아있어 승리하셨습니다!\n", lastPlayer->name);
+            write(player_out_fds[i], message, strlen(message) + 1);
+        }
         return lastPlayer;
     }
 
@@ -321,8 +434,18 @@ void determineWinners(Player players[], int playerCount, Card communityCards[], 
             // 디버깅 출력
             printf("%s님의 핸드 평가 결과: 랭크 = %d, 최고 카드 = %d\n", players[i].name, playerEvaluation.rank, playerEvaluation.highCard);
             printf("%s님의 키커 카드 : ", players[i].name);
+            snprintf(message, sizeof(message), "%s님의 핸드 평가 결과: 랭크 = %d, 최고 카드 = %d\n", players[i].name, playerEvaluation.rank, playerEvaluation.highCard);
+            write(player_out_fds[i], message, strlen(message) + 1);
+            sleep(1);
+            snprintf(message, sizeof(message), "%s님의 키커 카드 : ", players[i].name);
+            write(player_out_fds[i], message, strlen(message) + 1);
+            sleep(1);
             for (int k = 0; k < 5; k++) {
                 printf("%d ", playerEvaluation.kicker[k]);
+                snprintf(message, sizeof(message), "%d ", playerEvaluation.kicker[k]);
+                write(player_out_fds[i], message, strlen(message) + 1);
+
+                sleep(1);
             }
             printf("\n");
 
@@ -353,11 +476,19 @@ void determineWinners(Player players[], int playerCount, Card communityCards[], 
         for (int i = 0; i < winnerCount; i++) {
             winners[i]->money += splitPot;
             printf("\n%s님이 공동 승리하여 %d의 판돈을 받았습니다!\n", winners[i]->name, splitPot);
+            // 모두에게 출력되도록 구현 필요
+            snprintf(message, sizeof(message), "\n%s님이 공동 승리하여 %d의 판돈을 받았습니다!\n", winners[i]->name, splitPot);
+            write(player_out_fds[i], message, strlen(message) + 1);
         }
     }
     else if (winnerCount == 1) {
         winners[0]->money += *pot;
         printf("\n%s님이 가장 높은 핸드를 가지고 승리하셨습니다! 판돈 %d를 차지합니다!\n", winners[0]->name, *pot);
+        for (int i = 0; i < PLAYER_COUNT; i++) {
+            snprintf(message, sizeof(message), "\n%s님이 가장 높은 핸드를 가지고 승리하셨습니다! 판돈 %d를 차지합니다!\n", winners[0]->name, *pot);
+            write(player_out_fds[i], message, strlen(message) + 1);
+        }
+        sleep(2);
     }
     else {
         printf("\n승리자가 없습니다. 확인이 필요합니다.\n");
