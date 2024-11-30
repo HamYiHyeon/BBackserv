@@ -227,6 +227,9 @@ int main() {
             }
             else {  // 부모 프로세스
                 // 자식 프로세스의 종료를 기다린다
+                currentBet = 0;
+                deckIndex = 0;
+                shuffleDeck(deck);  // 덱을 다시 셔플하여 새로운 게임 준비
                 wait(NULL);
             }
         }
@@ -236,9 +239,7 @@ int main() {
         sleep(1);
         // 5. 게임 초기화
         resetGame(players, PLAYER_COUNT);
-        currentBet = 0;
-        deckIndex = 0;
-        shuffleDeck(deck);  // 덱을 다시 셔플하여 새로운 게임 준비
+        
     }
     sleep(1);
     // 최종 우승자 출력
