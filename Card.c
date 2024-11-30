@@ -3,11 +3,11 @@
 #include <stdio.h>
 #include "gamelogic.h"
 
-// ÇÚµå¸¦ Æò°¡ÇÏ´Â ÇÔ¼ö
+// í•¸ë“œë¥¼ í‰ê°€í•˜ëŠ” í•¨ìˆ˜
 HandEvaluation evaluateHand(Card playerCards[], Card communityCards[]) {
     HandEvaluation bestEvaluation = { HIGH_CARD, 0, {0} };
 
-    // ÃÑ 7ÀåÀÇ Ä«µå Áß¿¡¼­ °¡Àå ÁÁÀº 5ÀåÀÇ Á¶ÇÕÀ» Æò°¡
+    // ì´ 7ì¥ì˜ ì¹´ë“œ ì¤‘ì—ì„œ ê°€ì¥ ì¢‹ì€ 5ì¥ì˜ ì¡°í•©ì„ í‰ê°€
     Card allCards[7];
     allCards[0] = playerCards[0];
     allCards[1] = playerCards[1];
@@ -15,7 +15,7 @@ HandEvaluation evaluateHand(Card playerCards[], Card communityCards[]) {
         allCards[2 + i] = communityCards[i];
     }
 
-    // 7ÀåÀÇ Ä«µå Áß¿¡¼­ 5ÀåÀ» ¼±ÅÃÇÏ´Â ¸ğµç Á¶ÇÕÀ» Æò°¡
+    // 7ì¥ì˜ ì¹´ë“œ ì¤‘ì—ì„œ 5ì¥ì„ ì„ íƒí•˜ëŠ” ëª¨ë“  ì¡°í•©ì„ í‰ê°€
     Card combination[5];
     getCombinations(allCards, 7, combination, 0, 0, 5, &bestEvaluation);
 
@@ -23,7 +23,7 @@ HandEvaluation evaluateHand(Card playerCards[], Card communityCards[]) {
 }
 
 void getCombinations(Card cards[], int numCards, Card combination[], int index, int start, int comboSize, HandEvaluation* bestEvaluation) {
-    // 7Àå¿¡¼­ 5ÀåÀ» ¼±ÅÃÇÏ´Â Á¶ÇÕÀ» Àç±ÍÀûÀ¸·Î ±¸ÇÔ
+    // 7ì¥ì—ì„œ 5ì¥ì„ ì„ íƒí•˜ëŠ” ì¡°í•©ì„ ì¬ê·€ì ìœ¼ë¡œ êµ¬í•¨
     if (index == comboSize) {
         HandEvaluation eval = evaluateFiveCardHand(combination);
         if (eval.rank > bestEvaluation->rank ||
@@ -44,17 +44,17 @@ void getCombinations(Card cards[], int numCards, Card combination[], int index, 
 HandEvaluation evaluateFiveCardHand(Card cards[]) {
     HandEvaluation evaluation = { HIGH_CARD, 0, {0} };
 
-    // Ä«µåÀÇ ·©Å©¿Í ¸ğ¾çÀ» Á¤·ÄÇÏ°í, ÇÚµå¸¦ ºĞ¼®ÇÏ¿© ·©Å© Æò°¡
-    int rankCounts[15] = { 0 };  // Ä«µå ·©Å© Ä«¿îÆ® (Ace´Â 14·Î ¼³Á¤)
-    int suitCounts[4] = { 0 };   // Ä«µå ½´Æ® Ä«¿îÆ®
+    // ì¹´ë“œì˜ ë­í¬ì™€ ëª¨ì–‘ì„ ì •ë ¬í•˜ê³ , í•¸ë“œë¥¼ ë¶„ì„í•˜ì—¬ ë­í¬ í‰ê°€
+    int rankCounts[15] = { 0 };  // ì¹´ë“œ ë­í¬ ì¹´ìš´íŠ¸ (AceëŠ” 14ë¡œ ì„¤ì •)
+    int suitCounts[4] = { 0 };   // ì¹´ë“œ ìŠˆíŠ¸ ì¹´ìš´íŠ¸
 
-    // °¢ Ä«µåÀÇ ·©Å©¿Í ¸ğ¾çÀ» Ä«¿îÆ®
+    // ê° ì¹´ë“œì˜ ë­í¬ì™€ ëª¨ì–‘ì„ ì¹´ìš´íŠ¸
     for (int i = 0; i < 5; i++) {
         rankCounts[cards[i].rank]++;
         suitCounts[cards[i].suit]++;
     }
 
-    // ÇÃ·¯½Ã ¿©ºÎ ÆÇ´Ü
+    // í”ŒëŸ¬ì‹œ ì—¬ë¶€ íŒë‹¨
     int isFlush = 0;
     for (int i = 0; i < 4; i++) {
         if (suitCounts[i] == 5) {
@@ -63,7 +63,7 @@ HandEvaluation evaluateFiveCardHand(Card cards[]) {
         }
     }
 
-    // ½ºÆ®·¹ÀÌÆ® ¿©ºÎ ÆÇ´Ü
+    // ìŠ¤íŠ¸ë ˆì´íŠ¸ ì—¬ë¶€ íŒë‹¨
     int isStraight = 0;
     int highCard = 0;
     for (int i = 14; i >= 5; i--) {
@@ -75,13 +75,13 @@ HandEvaluation evaluateFiveCardHand(Card cards[]) {
         }
     }
 
-    // Æ¯¼ö ½ºÆ®·¹ÀÌÆ® (A, 2, 3, 4, 5) ¿©ºÎ È®ÀÎ
+    // íŠ¹ìˆ˜ ìŠ¤íŠ¸ë ˆì´íŠ¸ (A, 2, 3, 4, 5) ì—¬ë¶€ í™•ì¸
     if (!isStraight && rankCounts[14] && rankCounts[2] && rankCounts[3] && rankCounts[4] && rankCounts[5]) {
         isStraight = 1;
         highCard = 5;
     }
 
-    // ÇÚµå ·©Å© °áÁ¤
+    // í•¸ë“œ ë­í¬ ê²°ì •
     if (isFlush && isStraight) {
         evaluation.rank = (highCard == 14) ? ROYAL_FLUSH : STRAIGHT_FLUSH;
         evaluation.highCard = highCard;
@@ -97,7 +97,7 @@ HandEvaluation evaluateFiveCardHand(Card cards[]) {
         setKickers(cards, 5, evaluation.kicker, evaluation.highCard);
     }
     else {
-        // Æä¾î³ª Æ®¸®ÇÃ µî ³ª¸ÓÁö ÇÚµå Æò°¡
+        // í˜ì–´ë‚˜ íŠ¸ë¦¬í”Œ ë“± ë‚˜ë¨¸ì§€ í•¸ë“œ í‰ê°€
         int fourOfAKind = 0, threeOfAKind = 0, pairs = 0;
         int kickerIndex = 0;
 
@@ -183,18 +183,18 @@ HandEvaluation evaluateFiveCardHand(Card cards[]) {
 }
 
 void setKickers(Card cards[], int cardCount, int kicker[], int highCard) {
-    // Ä«µå¸¦ ³»¸²Â÷¼øÀ¸·Î Á¤·ÄÇÏ¿© Å°Ä¿ ¼³Á¤
+    // ì¹´ë“œë¥¼ ë‚´ë¦¼ì°¨ìˆœìœ¼ë¡œ ì •ë ¬í•˜ì—¬ í‚¤ì»¤ ì„¤ì •
     Card sortedCards[5];
     int sortedIndex = 0;
 
-    // ¸ÕÀú highCard¸¦ Á¦¿ÜÇÑ ³ª¸ÓÁö Ä«µå¸¦ ÀúÀåÇÕ´Ï´Ù.
+    // ë¨¼ì € highCardë¥¼ ì œì™¸í•œ ë‚˜ë¨¸ì§€ ì¹´ë“œë¥¼ ì €ì¥í•©ë‹ˆë‹¤.
     for (int i = 0; i < cardCount; i++) {
         if (cards[i].rank != highCard || sortedIndex >= 4) {
             sortedCards[sortedIndex++] = cards[i];
         }
     }
 
-    // ³ª¸ÓÁö Ä«µå¸¦ Á¤·ÄÇÕ´Ï´Ù.
+    // ë‚˜ë¨¸ì§€ ì¹´ë“œë¥¼ ì •ë ¬í•©ë‹ˆë‹¤.
     for (int i = 0; i < sortedIndex - 1; i++) {
         for (int j = i + 1; j < sortedIndex; j++) {
             if (sortedCards[j].rank > sortedCards[i].rank) {
@@ -205,7 +205,7 @@ void setKickers(Card cards[], int cardCount, int kicker[], int highCard) {
         }
     }
 
-    // Á¤·ÄµÈ Ä«µå¸¦ kicker¿¡ ÀúÀåÇÕ´Ï´Ù.
+    // ì •ë ¬ëœ ì¹´ë“œë¥¼ kickerì— ì €ì¥í•©ë‹ˆë‹¤.
     for (int i = 0; i < sortedIndex; i++) {
         kicker[i] = sortedCards[i].rank;
     }

@@ -4,26 +4,26 @@
 #include "Card.h"
 #include "shared_memory.h"
 
-/* °ÔÀÓ ÁøÇà¿¡ °ü·ÃµÈ ·ÎÁ÷ÀÔ´Ï´Ù. */
+/* ê²Œì„ ì§„í–‰ì— ê´€ë ¨ëœ ë¡œì§ì…ë‹ˆë‹¤. */
 
-// »ó¼ö Á¤ÀÇ
-#define PLAYER_COUNT 4  // ÇÃ·¹ÀÌ¾î ¼ö
-#define COMMUNITY_CARD_COUNT 5 // Ä¿¹Â´ÏÆ¼ Ä«µå ¼ö
+// ìƒìˆ˜ ì •ì˜
+#define PLAYER_COUNT 4  // í”Œë ˆì´ì–´ ìˆ˜
+#define COMMUNITY_CARD_COUNT 5 // ì»¤ë®¤ë‹ˆí‹° ì¹´ë“œ ìˆ˜
 
-// ÇÃ·¹ÀÌ¾î ±¸Á¶Ã¼ Á¤ÀÇ
+// í”Œë ˆì´ì–´ êµ¬ì¡°ì²´ ì •ì˜
 typedef struct {
-    char name[50];   // ÇÃ·¹ÀÌ¾î ÀÌ¸§
-    int money;       // ¼ÒÁö ±İ¾×
-    Card holeCards[2];  // °¢ ÇÃ·¹ÀÌ¾îÀÇ È¦ Ä«µå
-    int isActive;    // °ÔÀÓ¿¡ Âü¿© ¿©ºÎ (Æúµå ¿©ºÎ µî)
-    int isAllIn;     // ¿ÃÀÎ ¿©ºÎ
-    int currentBet;  // ÇöÀç ¶ó¿îµå¿¡¼­ÀÇ º£ÆÃ ±İ¾×
-    int hasCalled;  // ·¹ÀÌÁî ÀÌÈÄ ÄİÀ» Çß´ÂÁö ¿©ºÎ¸¦ ÀúÀå
-    int hasChecked; // Ã¼Å© ¿©ºÎ ÀúÀå
+    char name[50];   // í”Œë ˆì´ì–´ ì´ë¦„
+    int money;       // ì†Œì§€ ê¸ˆì•¡
+    Card holeCards[2];  // ê° í”Œë ˆì´ì–´ì˜ í™€ ì¹´ë“œ
+    int isActive;    // ê²Œì„ì— ì°¸ì—¬ ì—¬ë¶€ (í´ë“œ ì—¬ë¶€ ë“±)
+    int isAllIn;     // ì˜¬ì¸ ì—¬ë¶€
+    int currentBet;  // í˜„ì¬ ë¼ìš´ë“œì—ì„œì˜ ë² íŒ… ê¸ˆì•¡
+    int hasCalled;  // ë ˆì´ì¦ˆ ì´í›„ ì½œì„ í–ˆëŠ”ì§€ ì—¬ë¶€ë¥¼ ì €ì¥
+    int hasChecked; // ì²´í¬ ì—¬ë¶€ ì €ì¥
 } Player;
 
 
-// °ÔÀÓ ¶ó¿îµå Á¤ÀÇ
+// ê²Œì„ ë¼ìš´ë“œ ì •ì˜
 typedef enum {
     PREFLOP,
     FLOP,
@@ -31,16 +31,16 @@ typedef enum {
     RIVER
 } Round;
 
-// ÇÔ¼ö ÇÁ·ÎÅäÅ¸ÀÔ ¼±¾ğ
-void initializeDeck(Card deck[]);  // µ¦ ÃÊ±âÈ­
-void shuffleDeck(Card deck[]);     // µ¦ ¼ÅÇÃ
-void dealHoleCards(Player players[], int playerCount, Card deck[], int* deckIndex);  // È¦ Ä«µå ºĞ¹è
-void dealCommunityCards(Card communityCards[], Card deck[], int* deckIndex, Round currentRound);  // Ä¿¹Â´ÏÆ¼ Ä«µå ºĞ¹è
-void startBettingRound(Player players[], int playerCount, int* currentBet, int* pot, int* lastToRaiseIndex);  // º£ÆÃ ¶ó¿îµå ÁøÇà
-void handlePlayerAction(Player* player, int* currentBet, int* pot, int playerIndex);  // ÇÃ·¹ÀÌ¾îÀÇ Çàµ¿ Ã³¸®
-void determineWinners(Player players[], int playerCount, Card communityCards[], int* pot);  // ½Â¸®ÀÚ ÆÇÁ¤
-void resetGame(Player players[], int playerCount);  // °ÔÀÓ ÃÊ±âÈ­
-int countActivePlayers(Player players[], int playerCount);  // È°¼º ÇÃ·¹ÀÌ¾î ¼ö¸¦ Ä«¿îÆ®
+// í•¨ìˆ˜ í”„ë¡œí† íƒ€ì… ì„ ì–¸
+void initializeDeck(Card deck[]);  // ë± ì´ˆê¸°í™”
+void shuffleDeck(Card deck[]);     // ë± ì…”í”Œ
+void dealHoleCards(Player players[], int playerCount, Card deck[], int* deckIndex);  // í™€ ì¹´ë“œ ë¶„ë°°
+void dealCommunityCards(Card communityCards[], Card deck[], int* deckIndex, Round currentRound);  // ì»¤ë®¤ë‹ˆí‹° ì¹´ë“œ ë¶„ë°°
+void startBettingRound(Player players[], int playerCount, int* currentBet, int* pot, int* lastToRaiseIndex);  // ë² íŒ… ë¼ìš´ë“œ ì§„í–‰
+void handlePlayerAction(Player* player, int* currentBet, int* pot, int playerIndex);  // í”Œë ˆì´ì–´ì˜ í–‰ë™ ì²˜ë¦¬
+void determineWinners(Player players[], int playerCount, Card communityCards[], int* pot);  // ìŠ¹ë¦¬ì íŒì •
+void resetGame(Player players[], int playerCount);  // ê²Œì„ ì´ˆê¸°í™”
+int countActivePlayers(Player players[], int playerCount);  // í™œì„± í”Œë ˆì´ì–´ ìˆ˜ë¥¼ ì¹´ìš´íŠ¸
 Player* checkForFoldWinner(Player players[], int playerCount);
 const char* getRankString(int rank);
 const char* getSuitString(int suit);

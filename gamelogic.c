@@ -9,10 +9,10 @@
 #include <sys/shm.h>
 #include <string.h>
 
-char message[256];
-char buffer[256];
+char message[4096];
+char buffer[4096];
 
-// µ¦ ÃÊ±âÈ­ ÇÔ¼ö: 52ÀåÀÇ Ä«µå¸¦ ÃÊ±âÈ­
+// ë± ì´ˆê¸°í™” í•¨ìˆ˜: 52ì¥ì˜ ì¹´ë“œë¥¼ ì´ˆê¸°í™”
 void initializeDeck(Card deck[]) {
     int index = 0;
     for (int suit = 0; suit < 4; suit++) {
@@ -24,7 +24,7 @@ void initializeDeck(Card deck[]) {
     }
 }
 
-// µ¦ ¼ÅÇÃ ÇÔ¼ö
+// ë± ì…”í”Œ í•¨ìˆ˜
 void shuffleDeck(Card deck[]) {
     srand((unsigned int)time(NULL));
     for (int i = 0; i < DECK_SIZE; i++) {
@@ -37,163 +37,238 @@ void shuffleDeck(Card deck[]) {
 
 const char* getRankString(int rank) {
     switch (rank) {
-    case 2: return "2";
-    case 3: return "3";
-    case 4: return "4";
-    case 5: return "5";
-    case 6: return "6";
-    case 7: return "7";
-    case 8: return "8";
-    case 9: return "9";
+    case 2: return "2 ";
+    case 3: return "3 ";
+    case 4: return "4 ";
+    case 5: return "5 ";
+    case 6: return "6 ";
+    case 7: return "7 ";
+    case 8: return "8 ";
+    case 9: return "9 ";
     case 10: return "10";
-    case 11: return "J";
-    case 12: return "Q";
-    case 13: return "K";
-    case 14: return "A";
-    default: return "?";
+    case 11: return "J ";
+    case 12: return "Q ";
+    case 13: return "K ";
+    case 14: return "A ";
+    default: return "? ";
     }
 }
 
 const char* getSuitString(int suit) {
     switch (suit) {
-    case 0: return "½ºÆäÀÌµå";
-    case 1: return "ÇÏÆ®";
-    case 2: return "´ÙÀÌ¾Æ¸óµå";
-    case 3: return "Å¬·´";
+    case 0: return "\u2660";
+    case 1: return "\u2665";
+    case 2: return "\u2666";
+    case 3: return "\u2663";
     default: return "?";
     }
 }
 
-// È¦ Ä«µå ºĞ¹è ÇÔ¼ö: °¢ ÇÃ·¹ÀÌ¾î¿¡°Ô 2ÀåÀÇ È¦ Ä«µå¸¦ ºĞ¹è
+// í™€ ì¹´ë“œ ë¶„ë°° í•¨ìˆ˜: ê° í”Œë ˆì´ì–´ì—ê²Œ 2ì¥ì˜ í™€ ì¹´ë“œë¥¼ ë¶„ë°°
 void dealHoleCards(Player players[], int playerCount, Card deck[], int* deckIndex) {
     for (int i = 0; i < playerCount; i++) {
         players[i].holeCards[0] = deck[(*deckIndex)++];
         players[i].holeCards[1] = deck[(*deckIndex)++];
-        // ÇÃ·¹ÀÌ¾î¿¡°Ô ºĞ¹èµÈ Ä«µå Ãâ·Â
-        printf("%s´ÔÀÇ È¦ Ä«µå: [%s %s], [%s %s]\n",
+        // í”Œë ˆì´ì–´ì—ê²Œ ë¶„ë°°ëœ ì¹´ë“œ ì¶œë ¥
+        printf("\n%së‹˜ì˜ í™€ ì¹´ë“œ: [%s %s], [%s %s]\n",
             players[i].name,
             getRankString(players[i].holeCards[0].rank), getSuitString(players[i].holeCards[0].suit),
             getRankString(players[i].holeCards[1].rank), getSuitString(players[i].holeCards[1].suit));
 
-        snprintf(message, sizeof(message), "%s´ÔÀÇ È¦ Ä«µå: [%s %s], [%s %s]\n",
+        printf("â”â”â”â”â”â”â”â”“        â”â”â”â”â”â”â”â”“        \n");
+        printf("â”ƒ%s    â”ƒ        â”ƒ%s    â”ƒ        \n", getRankString(players[i].holeCards[0].rank), getRankString(players[i].holeCards[1].rank));
+        printf("â”ƒ      â”ƒ        â”ƒ      â”ƒ        \n");
+        printf("â”ƒ  %s   â”ƒ        â”ƒ  %s   â”ƒ      \n", getSuitString(players[i].holeCards[0].suit), getSuitString(players[i].holeCards[1].suit));
+        printf("â”ƒ      â”ƒ        â”ƒ      â”ƒ        \n");
+        printf("â”ƒ    %sâ”ƒ        â”ƒ    %sâ”ƒ        \n", getRankString(players[i].holeCards[0].rank), getRankString(players[i].holeCards[1].rank));
+        printf("â”—â”â”â”â”â”â”â”›        â”—â”â”â”â”â”â”â”›        \n");
+
+        snprintf(message, sizeof(message), "%së‹˜ì˜ í™€ ì¹´ë“œ: [%s %s], [%s %s]\n"                 
+               "â”â”â”â”â”â”â”â”“  â”â”â”â”â”â”â”â”“\n"
+               "â”ƒ%s    â”ƒ  â”ƒ%s    â”ƒ\n"                 
+               "â”ƒ      â”ƒ  â”ƒ      â”ƒ\n"                 
+               "â”ƒ  %s   â”ƒ  â”ƒ  %s   â”ƒ\n"
+               "â”ƒ      â”ƒ  â”ƒ      â”ƒ\n"                 
+               "â”ƒ    %sâ”ƒ  â”ƒ    %sâ”ƒ                           "
+               "â”—â”â”â”â”â”â”â”›  â”—â”â”â”â”â”â”â”›\n",
             players[i].name,
             getRankString(players[i].holeCards[0].rank), getSuitString(players[i].holeCards[0].suit),
-            getRankString(players[i].holeCards[1].rank), getSuitString(players[i].holeCards[1].suit));
+            getRankString(players[i].holeCards[1].rank), getSuitString(players[i].holeCards[1].suit),
+            getRankString(players[i].holeCards[0].rank), getRankString(players[i].holeCards[1].rank),
+            getSuitString(players[i].holeCards[0].suit), getSuitString(players[i].holeCards[1].suit),
+            getRankString(players[i].holeCards[0].rank), getRankString(players[i].holeCards[1].rank));
         write(player_out_fds[i], message, strlen(message) + 1);
+
     }
 }
 
 
-// Ä¿¹Â´ÏÆ¼ Ä«µå ºĞ¹è ÇÔ¼ö: ÇÃ¶ø, ÅÏ, ¸®¹ö ´Ü°è¿¡ µû¶ó Ä¿¹Â´ÏÆ¼ Ä«µå¸¦ ºĞ¹è
+// ì»¤ë®¤ë‹ˆí‹° ì¹´ë“œ ë¶„ë°° í•¨ìˆ˜: í”Œë, í„´, ë¦¬ë²„ ë‹¨ê³„ì— ë”°ë¼ ì»¤ë®¤ë‹ˆí‹° ì¹´ë“œë¥¼ ë¶„ë°°
 void dealCommunityCards(Card communityCards[], Card deck[], int* deckIndex, Round currentRound) {
     switch (currentRound) {
     case FLOP:
         for (int i = 0; i < 3; i++) {
             communityCards[i] = deck[(*deckIndex)++];
         }
-        printf("ÇÃ¶ø ´Ü°è: Ä¿¹Â´ÏÆ¼ Ä«µå 3ÀåÀÌ °ø°³µÇ¾ú½À´Ï´Ù: [%s %s], [%s %s], [%s %s]\n",
+        printf("\ní”Œë ë‹¨ê³„: ì»¤ë®¤ë‹ˆí‹° ì¹´ë“œ 3ì¥ì´ ê³µê°œë˜ì—ˆìŠµë‹ˆë‹¤: [%s %s], [%s %s], [%s %s]\n",
             getRankString(communityCards[0].rank), getSuitString(communityCards[0].suit),
             getRankString(communityCards[1].rank), getSuitString(communityCards[1].suit),
             getRankString(communityCards[2].rank), getSuitString(communityCards[2].suit));
+
+        printf("â”â”â”â”â”â”â”â”“        â”â”â”â”â”â”â”â”“        â”â”â”â”â”â”â”â”“        \n");
+        printf("â”ƒ%s    â”ƒ        â”ƒ%s    â”ƒ        â”ƒ%s    â”ƒ        \n", getRankString(communityCards[0].rank), getRankString(communityCards[1].rank), getRankString(communityCards[2].rank));
+        printf("â”ƒ      â”ƒ        â”ƒ      â”ƒ        â”ƒ      â”ƒ        \n");
+        printf("â”ƒ  %s   â”ƒ        â”ƒ  %s   â”ƒ        â”ƒ  %s   â”ƒ     \n", getSuitString(communityCards[0].suit), getSuitString(communityCards[1].suit), getSuitString(communityCards[2].suit));
+        printf("â”ƒ      â”ƒ        â”ƒ      â”ƒ        â”ƒ      â”ƒ        \n");
+        printf("â”ƒ    %sâ”ƒ        â”ƒ    %sâ”ƒ        â”ƒ    %sâ”ƒ        \n", getRankString(communityCards[0].rank), getRankString(communityCards[1].rank), getRankString(communityCards[2].rank));
+        printf("â”—â”â”â”â”â”â”â”›        â”—â”â”â”â”â”â”â”›        â”—â”â”â”â”â”â”â”›        \n");
+
+
+
         for (int i = 0; i < PLAYER_COUNT; i++) {
-            snprintf(message, sizeof(message), "ÇÃ¶ø ´Ü°è: Ä¿¹Â´ÏÆ¼ Ä«µå 3ÀåÀÌ °ø°³µÇ¾ú½À´Ï´Ù: [%s %s], [%s %s], [%s %s]\n",
-                getRankString(communityCards[0].rank), getSuitString(communityCards[0].suit),
-                getRankString(communityCards[1].rank), getSuitString(communityCards[1].suit),
-                getRankString(communityCards[2].rank), getSuitString(communityCards[2].suit));
+            snprintf(message, sizeof(message), "í”Œë ë‹¨ê³„: ì»¤ë®¤ë‹ˆí‹° ì¹´ë“œ 3ì¥ì´ ê³µê°œë˜ì—ˆìŠµë‹ˆë‹¤: [%s %s], [%s %s], [%s %s]\n"
+                    "â”â”â”â”â”â”â”â”“  â”â”â”â”â”â”â”â”“  â”â”â”â”â”â”â”â”“\n"
+                    "â”ƒ%s    â”ƒ  â”ƒ%s    â”ƒ  â”ƒ%s    â”ƒ\n"
+                    "â”ƒ      â”ƒ  â”ƒ      â”ƒ  â”ƒ      â”ƒ   "
+                    "â”ƒ  %s   â”ƒ  â”ƒ  %s   â”ƒ  â”ƒ  %s   â”ƒ\n"
+                    "â”ƒ      â”ƒ  â”ƒ      â”ƒ  â”ƒ      â”ƒ\n"
+                    "â”ƒ    %sâ”ƒ  â”ƒ    %sâ”ƒ  â”ƒ    %sâ”ƒ\n"
+                    "â”—â”â”â”â”â”â”â”›  â”—â”â”â”â”â”â”â”›  â”—â”â”â”â”â”â”â”›\n",
+                getRankString(communityCards[0].rank), getSuitString(communityCards[0].suit), getRankString(communityCards[1].rank),
+                getSuitString(communityCards[1].suit), getRankString(communityCards[2].rank), getSuitString(communityCards[2].suit),
+                getRankString(communityCards[0].rank), getRankString(communityCards[1].rank), getRankString(communityCards[2].rank),
+                getSuitString(communityCards[0].suit), getSuitString(communityCards[1].suit), getSuitString(communityCards[2].suit),
+                getRankString(communityCards[0].rank), getRankString(communityCards[1].rank), getRankString(communityCards[2].rank));
             write(player_out_fds[i], message, strlen(message) + 1);
         }
         break;
     case TURN:
         communityCards[3] = deck[(*deckIndex)++];
-        printf("ÅÏ ´Ü°è: Ä¿¹Â´ÏÆ¼ Ä«µå 1ÀåÀÌ Ãß°¡·Î °ø°³µÇ¾ú½À´Ï´Ù: [%s %s]\n",
+        printf("í„´ ë‹¨ê³„: ì»¤ë®¤ë‹ˆí‹° ì¹´ë“œ 1ì¥ì´ ì¶”ê°€ë¡œ ê³µê°œë˜ì—ˆìŠµë‹ˆë‹¤: [%s %s]\n",
             getRankString(communityCards[3].rank), getSuitString(communityCards[3].suit));
+
+        printf("â”â”â”â”â”â”â”â”“        â”â”â”â”â”â”â”â”“        â”â”â”â”â”â”â”â”“        â”â”â”â”â”â”â”â”“    \n");
+        printf("â”ƒ%s    â”ƒ        â”ƒ%s    â”ƒ        â”ƒ%s    â”ƒ        â”ƒ%s    â”ƒ\n",getRankString(communityCards[0].rank),getRankString(communityCards[1].rank),getRankString(communityCards[2].rank),getRankString(communityCards[3].rank));
+        printf("â”ƒ      â”ƒ        â”ƒ      â”ƒ        â”ƒ      â”ƒ        â”ƒ      â”ƒ    \n");
+        printf("â”ƒ  %s   â”ƒ        â”ƒ  %s   â”ƒ        â”ƒ  %s   â”ƒ        â”ƒ  %s   â”ƒ\n",getSuitString(communityCards[0].suit),getSuitString(communityCards[1].suit),getSuitString(communityCards[2].suit),getSuitString(communityCards[3].suit));
+        printf("â”ƒ      â”ƒ        â”ƒ      â”ƒ        â”ƒ      â”ƒ        â”ƒ      â”ƒ    \n");
+        printf("â”ƒ    %sâ”ƒ        â”ƒ    %sâ”ƒ        â”ƒ    %sâ”ƒ        â”ƒ    %sâ”ƒ\n",getRankString(communityCards[0].rank),getRankString(communityCards[1].rank),getRankString(communityCards[2].rank),getRankString(communityCards[3].rank));
+        printf("â”—â”â”â”â”â”â”â”›        â”—â”â”â”â”â”â”â”›        â”—â”â”â”â”â”â”â”›        â”—â”â”â”â”â”â”â”›    \n");
+
         for (int i = 0; i < PLAYER_COUNT; i++) {
-            snprintf(message, sizeof(message), "ÅÏ ´Ü°è: Ä¿¹Â´ÏÆ¼ Ä«µå 1ÀåÀÌ Ãß°¡·Î °ø°³µÇ¾ú½À´Ï´Ù: [%s %s]\n",
-                getRankString(communityCards[3].rank), getSuitString(communityCards[3].suit));
+            snprintf(message, sizeof(message), "\ní„´ ë‹¨ê³„: ì»¤ë®¤ë‹ˆí‹° ì¹´ë“œ 1ì¥ì´ ì¶”ê°€ë¡œ ê³µê°œë˜ì—ˆìŠµë‹ˆë‹¤: [%s %s]\n"
+                    "â”â”â”â”â”â”â”â”“\n"
+                    "â”ƒ%-6sâ”ƒ\n"
+                    "â”ƒ      â”ƒ\n"
+                    "â”ƒ  %s   â”ƒ\n"
+                    "â”ƒ      â”ƒ\n"
+                    "â”ƒ%6sâ”ƒ\n"
+                    "â”—â”â”â”â”â”â”â”›\n",
+                getRankString(communityCards[3].rank), getSuitString(communityCards[3].suit),
+                getRankString(communityCards[3].rank), getSuitString(communityCards[3].suit), getRankString(communityCards[3].rank));
             write(player_out_fds[i], message, strlen(message) + 1);
         }
         break;
     case RIVER:
         communityCards[4] = deck[(*deckIndex)++];
-        printf("¸®¹ö ´Ü°è: ¸¶Áö¸· Ä¿¹Â´ÏÆ¼ Ä«µå 1ÀåÀÌ °ø°³µÇ¾ú½À´Ï´Ù: [%s %s]\n",
+        printf("\në¦¬ë²„ ë‹¨ê³„: ë§ˆì§€ë§‰ ì»¤ë®¤ë‹ˆí‹° ì¹´ë“œ 1ì¥ì´ ê³µê°œë˜ì—ˆìŠµë‹ˆë‹¤: [%s %s]\n",
             getRankString(communityCards[4].rank), getSuitString(communityCards[4].suit));
+
+        printf("â”â”â”â”â”â”â”â”“        â”â”â”â”â”â”â”â”“        â”â”â”â”â”â”â”â”“        â”â”â”â”â”â”â”â”“        â”â”â”â”â”â”â”â”“\n");
+        printf("â”ƒ%s    â”ƒ        â”ƒ%s    â”ƒ        â”ƒ%s    â”ƒ        â”ƒ%s    â”ƒ        â”ƒ%s    â”ƒ\n",getRankString(communityCards[0].rank),getRankString(communityCards[1].rank),getRankString(communityCards[2].rank),getRankString(communityCards[3].rank),getRankString(communityCards[4].rank));
+        printf("â”ƒ      â”ƒ        â”ƒ      â”ƒ        â”ƒ      â”ƒ        â”ƒ      â”ƒ        â”ƒ      â”ƒ\n");
+        printf("â”ƒ  %s   â”ƒ        â”ƒ  %s   â”ƒ        â”ƒ  %s   â”ƒ        â”ƒ  %s   â”ƒ        â”ƒ  %s   â”ƒ\n",getSuitString(communityCards[0].suit),getSuitString(communityCards[1].suit),getSuitString(communityCards[2].suit),getSuitString(communityCards[3].suit),getSuitString(communityCards[4].suit));
+        printf("â”ƒ      â”ƒ        â”ƒ      â”ƒ        â”ƒ      â”ƒ        â”ƒ      â”ƒ        â”ƒ      â”ƒ\n");
+        printf("â”ƒ    %sâ”ƒ        â”ƒ    %sâ”ƒ        â”ƒ    %sâ”ƒ        â”ƒ    %sâ”ƒ        â”ƒ    %sâ”ƒ\n",getRankString(communityCards[0].rank),getRankString(communityCards[1].rank),getRankString(communityCards[2].rank),getRankString(communityCards[3].rank),getRankString(communityCards[4].rank));
+        printf("â”—â”â”â”â”â”â”â”›        â”—â”â”â”â”â”â”â”›        â”—â”â”â”â”â”â”â”›        â”—â”â”â”â”â”â”â”›        â”—â”â”â”â”â”â”â”›\n");
+
+
         for (int i = 0; i < PLAYER_COUNT; i++) {
-            snprintf(message, sizeof(message), "¸®¹ö ´Ü°è: ¸¶Áö¸· Ä¿¹Â´ÏÆ¼ Ä«µå 1ÀåÀÌ °ø°³µÇ¾ú½À´Ï´Ù: [%s %s]\n",
-                getRankString(communityCards[4].rank), getSuitString(communityCards[4].suit));
-            write(player_out_fds[i], message, strlen(message) + 1);
-        }
+            snprintf(message, sizeof(message),
+                    "\në¦¬ë²„ ë‹¨ê³„: ë§ˆì§€ë§‰ ì»¤ë®¤ë‹ˆí‹° ì¹´ë“œ 1ì¥ì´ ê³µê°œë˜ì—ˆìŠµë‹ˆë‹¤: [%s %s]\n"
+                    "â”â”â”â”â”â”â”â”“\n"
+                    "â”ƒ%-6sâ”ƒ\n"
+                    "â”ƒ      â”ƒ\n"
+                    "â”ƒ  %s   â”ƒ\n"
+                    "â”ƒ      â”ƒ\n"
+                    "â”ƒ%6sâ”ƒ\n"
+                    "â”—â”â”â”â”â”â”â”›\n",
+                getRankString(communityCards[4].rank), getSuitString(communityCards[4].suit),
+                getRankString(communityCards[4].rank), getSuitString(communityCards[4].suit), getRankString(communityCards[4].rank));
+			write(player_out_fds[i], message, strlen(message) + 1);
+		}
         break;
     default:
         break;
     }
 }
 
-// º£ÆÃ ¶ó¿îµå ÁøÇà ÇÔ¼ö: °¢ ÇÃ·¹ÀÌ¾î°¡ º£ÆÃ, Äİ, Æúµå µîÀÇ ¾×¼ÇÀ» ÁøÇà
+// ë² íŒ… ë¼ìš´ë“œ ì§„í–‰ í•¨ìˆ˜: ê° í”Œë ˆì´ì–´ê°€ ë² íŒ…, ì½œ, í´ë“œ ë“±ì˜ ì•¡ì…˜ì„ ì§„í–‰
 void startBettingRound(Player players[], int playerCount, int* currentBet, int* pot, int* lastToRaiseIndex) {
     int activePlayerCount = 0;
 
-    // ÃÊ±â ¼³Á¤: ¸ğµç ÇÃ·¹ÀÌ¾îÀÇ currentBetÀ» 0À¸·Î ¼³Á¤ÇÏ°í, hasCalled¸¦ 0À¸·Î ÃÊ±âÈ­
+    // ì´ˆê¸° ì„¤ì •: ëª¨ë“  í”Œë ˆì´ì–´ì˜ currentBetì„ 0ìœ¼ë¡œ ì„¤ì •í•˜ê³ , hasCalledë¥¼ 0ìœ¼ë¡œ ì´ˆê¸°í™”
     for (int i = 0; i < playerCount; i++) {
         players[i].currentBet = 0;
         players[i].hasCalled = 0;
-        players[i].hasChecked = 0; // °¢ ÇÃ·¹ÀÌ¾îÀÇ Ã¼Å© ¿©ºÎ ÃÊ±âÈ­
+        players[i].hasChecked = 0; // ê° í”Œë ˆì´ì–´ì˜ ì²´í¬ ì—¬ë¶€ ì´ˆê¸°í™”
         if (players[i].isActive && players[i].money > 0) {
             activePlayerCount++;
         }
     }
 
-    // ¸ğµç ÇÃ·¹ÀÌ¾î°¡ ·¹ÀÌÁî¿¡ ¸ÂÃß°Å³ª ÆúµåÇÒ ¶§±îÁö ¹İº¹
+    // ëª¨ë“  í”Œë ˆì´ì–´ê°€ ë ˆì´ì¦ˆì— ë§ì¶”ê±°ë‚˜ í´ë“œí•  ë•Œê¹Œì§€ ë°˜ë³µ
     while (1) {
-        int allCalled = 1;  // ¸ğµç ÇÃ·¹ÀÌ¾î°¡ ·¹ÀÌÁî¿¡ ¸ÂÃè´ÂÁö È®ÀÎÇÏ±â À§ÇÑ º¯¼ö
-        int allChecked = 1; // ¸ğµç ÇÃ·¹ÀÌ¾î°¡ Ã¼Å©Çß´ÂÁö È®ÀÎÇÏ±â À§ÇÑ º¯¼ö
+        int allCalled = 1;  // ëª¨ë“  í”Œë ˆì´ì–´ê°€ ë ˆì´ì¦ˆì— ë§ì·„ëŠ”ì§€ í™•ì¸í•˜ê¸° ìœ„í•œ ë³€ìˆ˜
+        int allChecked = 1; // ëª¨ë“  í”Œë ˆì´ì–´ê°€ ì²´í¬í–ˆëŠ”ì§€ í™•ì¸í•˜ê¸° ìœ„í•œ ë³€ìˆ˜
 
-        // ¸¶Áö¸· ·¹ÀÌÁîÇÑ ÇÃ·¹ÀÌ¾î ´ÙÀ½ºÎÅÍ ½ÃÀÛ
+        // ë§ˆì§€ë§‰ ë ˆì´ì¦ˆí•œ í”Œë ˆì´ì–´ ë‹¤ìŒë¶€í„° ì‹œì‘
         for (int i = (*lastToRaiseIndex) % playerCount, count = 0; count < playerCount; count++, i = (i + 1) % playerCount) {
-            // ÇÃ·¹ÀÌ¾î°¡ ÀÌ¹Ì ÆúµåÇß°Å³ª µ·ÀÌ ¾ø´Â °æ¿ì °Ç³Ê¶Ü
+            // í”Œë ˆì´ì–´ê°€ ì´ë¯¸ í´ë“œí–ˆê±°ë‚˜ ëˆì´ ì—†ëŠ” ê²½ìš° ê±´ë„ˆëœ€
             if (!players[i].isActive || players[i].money <= 0 || players[i].isAllIn) {
                 continue;
             }
 
-            // ¸¶Áö¸· ·¹ÀÌÁî ÀÌÈÄ ¸ğµç ÇÃ·¹ÀÌ¾î°¡ ÄİÇßÀ¸¸é ¹İº¹ Á¾·á
+            // ë§ˆì§€ë§‰ ë ˆì´ì¦ˆ ì´í›„ ëª¨ë“  í”Œë ˆì´ì–´ê°€ ì½œí–ˆìœ¼ë©´ ë°˜ë³µ ì¢…ë£Œ
             if (players[i].hasCalled == 1) {
                 continue;
             }
 
-            // ÇÃ·¹ÀÌ¾îÀÇ Çàµ¿ Ã³¸®
+            // í”Œë ˆì´ì–´ì˜ í–‰ë™ ì²˜ë¦¬
             int amountToCall = *currentBet - players[i].currentBet;
             sleep(1);
-            printf("%s´ÔÀÇ Â÷·ÊÀÔ´Ï´Ù. ÇöÀç º£ÆÃ ±İ¾×: %d, ÄİÇÏ·Á¸é %d°¡ ÇÊ¿äÇÕ´Ï´Ù.\n", players[i].name, *currentBet, amountToCall);
-            snprintf(message, sizeof(message), "%s´ÔÀÇ Â÷·ÊÀÔ´Ï´Ù. ÇöÀç º£ÆÃ ±İ¾×: %d, ÄİÇÏ·Á¸é %d°¡ ÇÊ¿äÇÕ´Ï´Ù.\n", players[i].name, *currentBet, amountToCall);
+            printf("%së‹˜ì˜ ì°¨ë¡€ì…ë‹ˆë‹¤. í˜„ì¬ ë² íŒ… ê¸ˆì•¡: %dì›, ì½œí•˜ë ¤ë©´ %dì›ì´ í•„ìš”í•©ë‹ˆë‹¤.\n", players[i].name, *currentBet, amountToCall);
+            snprintf(message, sizeof(message), "%së‹˜ì˜ ì°¨ë¡€ì…ë‹ˆë‹¤. í˜„ì¬ ë² íŒ… ê¸ˆì•¡: %d, ì½œí•˜ë ¤ë©´ %dì›ì´ í•„ìš”í•©ë‹ˆë‹¤.\n", players[i].name, *currentBet, amountToCall);
             write(player_out_fds[i], message, strlen(message) + 1);
             sleep(1);
 
             handlePlayerAction(&players[i], currentBet, pot, i);
 
-            // ·¹ÀÌÁî°¡ ¹ß»ıÇÑ °æ¿ì, ¸¶Áö¸·À¸·Î ·¹ÀÌÁîÇÑ ÇÃ·¹ÀÌ¾î ±â·Ï ¹× ¸ğµç ÇÃ·¹ÀÌ¾îÀÇ hasCalled ÃÊ±âÈ­
+            // ë ˆì´ì¦ˆê°€ ë°œìƒí•œ ê²½ìš°, ë§ˆì§€ë§‰ìœ¼ë¡œ ë ˆì´ì¦ˆí•œ í”Œë ˆì´ì–´ ê¸°ë¡ ë° ëª¨ë“  í”Œë ˆì´ì–´ì˜ hasCalled ì´ˆê¸°í™”
             if (players[i].currentBet > *currentBet || (players[i].isAllIn && (players[i].currentBet > *currentBet))) {
                 if (players[i].currentBet > *currentBet) *currentBet = players[i].currentBet;
 
                 *lastToRaiseIndex = i;
 
-                // ¸ğµç ÇÃ·¹ÀÌ¾îÀÇ hasCalled¿Í hasChecked¸¦ 0À¸·Î ¼³Á¤
+                // ëª¨ë“  í”Œë ˆì´ì–´ì˜ hasCalledì™€ hasCheckedë¥¼ 0ìœ¼ë¡œ ì„¤ì •
                 for (int j = 0; j < playerCount; j++) {
                     if (players[j].isActive && players[j].money > 0 && !players[j].isAllIn) {
                         players[j].hasCalled = 0;
-                        players[j].hasChecked = 0; // ·¹ÀÌÁî ½Ã Ã¼Å© »óÅÂµµ ÃÊ±âÈ­
+                        players[j].hasChecked = 0; // ë ˆì´ì¦ˆ ì‹œ ì²´í¬ ìƒíƒœë„ ì´ˆê¸°í™”
                     }
                 }
-                players[i].hasCalled = 1; // ·¹ÀÌÁîÇÑ ÇÃ·¹ÀÌ¾î´Â ÀÌ¹Ì ÄİÇÑ °ÍÀ¸·Î Ç¥½Ã
-                allCalled = 0; // »õ·Î¿î ·¹ÀÌÁî°¡ ¹ß»ıÇßÀ¸¹Ç·Î ´Ù½Ã allCalled È®ÀÎ ÇÊ¿ä
+                players[i].hasCalled = 1; // ë ˆì´ì¦ˆí•œ í”Œë ˆì´ì–´ëŠ” ì´ë¯¸ ì½œí•œ ê²ƒìœ¼ë¡œ í‘œì‹œ
+                allCalled = 0; // ìƒˆë¡œìš´ ë ˆì´ì¦ˆê°€ ë°œìƒí–ˆìœ¼ë¯€ë¡œ ë‹¤ì‹œ allCalled í™•ì¸ í•„ìš”
             }
             else if (players[i].currentBet == *currentBet) {
-                players[i].hasCalled = 1; // ÄİÇßÀ½À» Ç¥½Ã
+                players[i].hasCalled = 1; // ì½œí–ˆìŒì„ í‘œì‹œ
             }
 
             if (amountToCall == 0 && *currentBet == 0) {
-                players[i].hasChecked = 1; // ÇÃ·¹ÀÌ¾î°¡ Ã¼Å©ÇßÀ½À» Ç¥½Ã
+                players[i].hasChecked = 1; // í”Œë ˆì´ì–´ê°€ ì²´í¬í–ˆìŒì„ í‘œì‹œ
             }
 
-            // ÇÑ ¸í¸¸ ³²Àº °æ¿ì Áï½Ã ¶ó¿îµå Á¾·á
+            // í•œ ëª…ë§Œ ë‚¨ì€ ê²½ìš° ì¦‰ì‹œ ë¼ìš´ë“œ ì¢…ë£Œ
             activePlayerCount = 0;
             for (int j = 0; j < playerCount; j++) {
                 if (players[j].isActive && (players[j].money > 0 || players[j].isAllIn)) {
@@ -206,9 +281,9 @@ void startBettingRound(Player players[], int playerCount, int* currentBet, int* 
             }
         }
 
-        // ¸ğµç ÇÃ·¹ÀÌ¾î°¡ ·¹ÀÌÁî¿¡ ¸ÂÃè°Å³ª ÆúµåÇß´ÂÁö È®ÀÎ
-        allCalled = 1; // ÃÊ±âÈ­
-        allChecked = 1; // ÃÊ±âÈ­
+        // ëª¨ë“  í”Œë ˆì´ì–´ê°€ ë ˆì´ì¦ˆì— ë§ì·„ê±°ë‚˜ í´ë“œí–ˆëŠ”ì§€ í™•ì¸
+        allCalled = 1; // ì´ˆê¸°í™”
+        allChecked = 1; // ì´ˆê¸°í™”
 
         for (int i = 0; i < playerCount; i++) {
             if (players[i].isActive && players[i].hasCalled == 0 && players[i].money > 0 && !players[i].isAllIn) {
@@ -219,61 +294,61 @@ void startBettingRound(Player players[], int playerCount, int* currentBet, int* 
             }
         }
 
-        // ¸ğµç ÇÃ·¹ÀÌ¾î°¡ ·¹ÀÌÁî¿¡ ¸ÂÃè´Ù¸é ¹İº¹ Á¾·á
+        // ëª¨ë“  í”Œë ˆì´ì–´ê°€ ë ˆì´ì¦ˆì— ë§ì·„ë‹¤ë©´ ë°˜ë³µ ì¢…ë£Œ
         if (allCalled) {
             sleep(1);
             break;
         }
 
-        // ¸ğµç ÇÃ·¹ÀÌ¾î°¡ Ã¼Å©ÇßÀ» °æ¿ì ´ÙÀ½ ¶ó¿îµå·Î ³Ñ¾î°¨
+        // ëª¨ë“  í”Œë ˆì´ì–´ê°€ ì²´í¬í–ˆì„ ê²½ìš° ë‹¤ìŒ ë¼ìš´ë“œë¡œ ë„˜ì–´ê°
         if (allChecked && *currentBet == 0) {
             sleep(1);
-            printf("¸ğµç ÇÃ·¹ÀÌ¾î°¡ Ã¼Å©Çß½À´Ï´Ù. ´ÙÀ½ ¶ó¿îµå·Î ³Ñ¾î°©´Ï´Ù.\n");
+            printf("ëª¨ë“  í”Œë ˆì´ì–´ê°€ ì²´í¬í–ˆìŠµë‹ˆë‹¤. ë‹¤ìŒ ë¼ìš´ë“œë¡œ ë„˜ì–´ê°‘ë‹ˆë‹¤.\n");
             for (int i = 0; i < PLAYER_COUNT; i++) {
-                snprintf(message, sizeof(message), "¸ğµç ÇÃ·¹ÀÌ¾î°¡ Ã¼Å©Çß½À´Ï´Ù. ´ÙÀ½ ¶ó¿îµå·Î ³Ñ¾î°©´Ï´Ù.\n");
+                snprintf(message, sizeof(message), "ëª¨ë“  í”Œë ˆì´ì–´ê°€ ì²´í¬í–ˆìŠµë‹ˆë‹¤. ë‹¤ìŒ ë¼ìš´ë“œë¡œ ë„˜ì–´ê°‘ë‹ˆë‹¤.\n");
                 write(player_out_fds[i], message, strlen(message) + 1);
             }
             break;
         }
     }
 
-    *currentBet = 0; // ´ÙÀ½ ¶ó¿îµå¸¦ À§ÇØ ÇöÀç º£ÆÃ ±İ¾× ÃÊ±âÈ­
+    *currentBet = 0; // ë‹¤ìŒ ë¼ìš´ë“œë¥¼ ìœ„í•´ í˜„ì¬ ë² íŒ… ê¸ˆì•¡ ì´ˆê¸°í™”
 }
 
-// ÇÃ·¹ÀÌ¾îÀÇ ¾×¼Ç Ã³¸® ÇÔ¼ö: º£ÆÃ, Äİ, Æúµå µîÀ» Ã³¸®
+// í”Œë ˆì´ì–´ì˜ ì•¡ì…˜ ì²˜ë¦¬ í•¨ìˆ˜: ë² íŒ…, ì½œ, í´ë“œ ë“±ì„ ì²˜ë¦¬
 void handlePlayerAction(Player* player, int* currentBet, int* pot, int playerIndex) {
-    snprintf(message, sizeof(message), "BET Çàµ¿À» ¼±ÅÃÇÏ¼¼¿ä: (1) Ã¼Å©, (2) Äİ, (3) ·¹ÀÌÁî, (4) Æúµå, (5) ¿ÃÀÎ: ");
+    snprintf(message, sizeof(message), "BET í–‰ë™ì„ ì„ íƒí•˜ì„¸ìš”: (1) ì²´í¬, (2) ì½œ, (3) ë ˆì´ì¦ˆ, (4) í´ë“œ, (5) ì˜¬ì¸: ");
     write(player_out_fds[playerIndex], message, strlen(message) + 1);
 
     int action;
     if (read(player_in_fds[playerIndex], &action, sizeof(action)) > 0) {
         switch (action) {
-        case 1: // Ã¼Å©
+        case 1: // ì²´í¬
             if (*currentBet == player->currentBet) {
-                printf("%s´ÔÀÌ Ã¼Å©ÇÏ¼Ì½À´Ï´Ù.\n", player->name);
+                printf("%së‹˜ì´ ì²´í¬í•˜ì…¨ìŠµë‹ˆë‹¤.\n", player->name);
                 for (int i = 0; i < PLAYER_COUNT; i++) {
-                    snprintf(message, sizeof(message), "%s´ÔÀÌ Ã¼Å©ÇÏ¼Ì½À´Ï´Ù.\n", player->name);
+                    snprintf(message, sizeof(message), "%së‹˜ì´ ì²´í¬í•˜ì…¨ìŠµë‹ˆë‹¤.\n", player->name);
                     write(player_out_fds[i], message, strlen(message) + 1);
                 }
                 sleep(1);
-                snprintf(message, sizeof(message), "´Ù¸¥ ÇÃ·¹ÀÌ¾î ¹èÆÃÁß..");
+                snprintf(message, sizeof(message), "ë‹¤ë¥¸ í”Œë ˆì´ì–´ ë°°íŒ…ì¤‘..");
                 write(player_out_fds[playerIndex], message, strlen(message) + 1);
                 sleep(1);
             }
             else {
-                printf("Ã¼Å©¸¦ ÇÒ ¼ö ¾ø½À´Ï´Ù. ÇöÀç º£ÆÃ ±İ¾×ÀÌ ÀÖ½À´Ï´Ù.\n");
-                snprintf(message, sizeof(message), "Ã¼Å©¸¦ ÇÒ ¼ö ¾ø½À´Ï´Ù. ÇöÀç º£ÆÃ ±İ¾×ÀÌ ÀÖ½À´Ï´Ù.\n");
+                printf("ì²´í¬ë¥¼ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤. í˜„ì¬ ë² íŒ… ê¸ˆì•¡ì´ ìˆìŠµë‹ˆë‹¤.\n");
+                snprintf(message, sizeof(message), "ì²´í¬ë¥¼ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤. í˜„ì¬ ë² íŒ… ê¸ˆì•¡ì´ ìˆìŠµë‹ˆë‹¤.\n");
                 write(player_out_fds[playerIndex], message, strlen(message) + 1);
                 sleep(1);
-                handlePlayerAction(player, currentBet, pot, playerIndex); // ´Ù½Ã ¼±ÅÃÇÏµµ·Ï Àç±Í È£Ãâ
+                handlePlayerAction(player, currentBet, pot, playerIndex); // ë‹¤ì‹œ ì„ íƒí•˜ë„ë¡ ì¬ê·€ í˜¸ì¶œ
             }
             break;
 
-        case 2: // Äİ
+        case 2: // ì½œ
             if (*currentBet == 0) {
-                // ÇöÀç º£ÆÃ ±İ¾×ÀÌ 0ÀÏ ¶§´Â ÄİÀÌ ¾Æ´Ñ Ã¼Å©¸¸ °¡´ÉÇÔ
-                printf("ÇöÀç º£ÆÃ ±İ¾×ÀÌ 0ÀÌ¹Ç·Î Ã¼Å©¸¸ °¡´ÉÇÕ´Ï´Ù.\n");
-                snprintf(message, sizeof(message), "ÇöÀç º£ÆÃ ±İ¾×ÀÌ 0ÀÌ¹Ç·Î Ã¼Å©¸¸ °¡´ÉÇÕ´Ï´Ù.\n");
+                // í˜„ì¬ ë² íŒ… ê¸ˆì•¡ì´ 0ì¼ ë•ŒëŠ” ì½œì´ ì•„ë‹Œ ì²´í¬ë§Œ ê°€ëŠ¥í•¨
+                printf("í˜„ì¬ ë² íŒ… ê¸ˆì•¡ì´ 0ì´ë¯€ë¡œ ì²´í¬ë§Œ ê°€ëŠ¥í•©ë‹ˆë‹¤.\n");
+                snprintf(message, sizeof(message), "í˜„ì¬ ë² íŒ… ê¸ˆì•¡ì´ 0ì´ë¯€ë¡œ ì²´í¬ë§Œ ê°€ëŠ¥í•©ë‹ˆë‹¤.\n");
                 write(player_out_fds[playerIndex], message, strlen(message) + 1);
                 sleep(1);
                 handlePlayerAction(player, currentBet, pot, playerIndex);
@@ -283,98 +358,98 @@ void handlePlayerAction(Player* player, int* currentBet, int* pot, int playerInd
                 player->money -= amountToCall;
                 *pot += amountToCall;
                 player->currentBet = *currentBet;
-                player->hasCalled = 1;  // ÄİÀ» ÇßÀ½À» Ç¥½Ã
-                printf("%s´ÔÀÌ ÄİÇÏ¼Ì½À´Ï´Ù.\n", player->name);
+                player->hasCalled = 1;  // ì½œì„ í–ˆìŒì„ í‘œì‹œ
+                printf("%së‹˜ì´ ì½œí•˜ì…¨ìŠµë‹ˆë‹¤.\n", player->name);
                 for (int i = 0; i < PLAYER_COUNT; i++) {
-                    snprintf(message, sizeof(message), "%s´ÔÀÌ ÄİÇÏ¼Ì½À´Ï´Ù.\n", player->name);
+                    snprintf(message, sizeof(message), "%së‹˜ì´ ì½œí•˜ì…¨ìŠµë‹ˆë‹¤.\n", player->name);
                     write(player_out_fds[i], message, strlen(message) + 1);
                 }
                 sleep(1);
-                snprintf(message, sizeof(message), "´ç½ÅÀÌ ÇöÀç °¡Áö°í ÀÖ´Â ±İ¾×: %d¿ø\n", player->money);
+                snprintf(message, sizeof(message), "ë‹¹ì‹ ì´ í˜„ì¬ ê°€ì§€ê³  ìˆëŠ” ê¸ˆì•¡: %dì›\n", player->money);
                 write(player_out_fds[playerIndex], message, strlen(message) + 1);
                 sleep(1);
-                snprintf(message, sizeof(message), "´Ù¸¥ ÇÃ·¹ÀÌ¾î ¹èÆÃÁß..");
+                snprintf(message, sizeof(message), "ë‹¤ë¥¸ í”Œë ˆì´ì–´ ë°°íŒ…ì¤‘..");
                 write(player_out_fds[playerIndex], message, strlen(message) + 1);
                 sleep(1);
             }
             else {
-                printf("ÄİÀ» ÇÒ ¼ö ¾ø½À´Ï´Ù. µ·ÀÌ ºÎÁ·ÇÕ´Ï´Ù. ¿ÃÀÎÀ» ¼±ÅÃÇØ¾ß ÇÕ´Ï´Ù.\n");
-                snprintf(message, sizeof(message), "ÄİÀ» ÇÒ ¼ö ¾ø½À´Ï´Ù. µ·ÀÌ ºÎÁ·ÇÕ´Ï´Ù. ¿ÃÀÎÀ» ¼±ÅÃÇØ¾ß ÇÕ´Ï´Ù.\n");
+                printf("ì½œì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤. ëˆì´ ë¶€ì¡±í•©ë‹ˆë‹¤. ì˜¬ì¸ì„ ì„ íƒí•´ì•¼ í•©ë‹ˆë‹¤.\n");
+                snprintf(message, sizeof(message), "ì½œì„ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤. ëˆì´ ë¶€ì¡±í•©ë‹ˆë‹¤. ì˜¬ì¸ì„ ì„ íƒí•´ì•¼ í•©ë‹ˆë‹¤.\n");
                 write(player_out_fds[playerIndex], message, strlen(message) + 1);
                 sleep(1);
-                handlePlayerAction(player, currentBet, pot, playerIndex); // ´Ù½Ã ¼±ÅÃÇÏµµ·Ï Àç±Í È£Ãâ
+                handlePlayerAction(player, currentBet, pot, playerIndex); // ë‹¤ì‹œ ì„ íƒí•˜ë„ë¡ ì¬ê·€ í˜¸ì¶œ
             }
             break;
 
-        case 3: // ·¹ÀÌÁî
+        case 3: // ë ˆì´ì¦ˆ
         {
             int raiseAmount;
             sleep(1);
-            printf("·¹ÀÌÁî ÇÏ¼Ì½À´Ï´Ù. µ· ÀÔ·ÂÁß.. ");
-            snprintf(message, sizeof(message), "RAISE ¾ó¸¶¸¦ ·¹ÀÌÁî ÇÏ½Ã°Ú½À´Ï±î?: ");
+            printf("ë ˆì´ì¦ˆ í•˜ì…¨ìŠµë‹ˆë‹¤. ëˆ ì…ë ¥ì¤‘.. ");
+            snprintf(message, sizeof(message), "RAISE ì–¼ë§ˆë¥¼ ë ˆì´ì¦ˆ í•˜ì‹œê² ìŠµë‹ˆê¹Œ?: ");
             write(player_out_fds[playerIndex], message, strlen(message) + 1);
             if (read(player_in_fds[playerIndex], &raiseAmount, sizeof(raiseAmount)) > 0) {
                 if (player->money >= *currentBet - player->currentBet + raiseAmount) {
                     *pot += *currentBet - player->currentBet + raiseAmount;
                     player->money -= *currentBet - player->currentBet + raiseAmount;
                     player->currentBet += raiseAmount;
-                    printf("%s´ÔÀÌ %d¸¸Å­ ·¹ÀÌÁîÇÏ¼Ì½À´Ï´Ù.\n", player->name, raiseAmount);
+                    printf("%së‹˜ì´ %dì›ì„ ë ˆì´ì¦ˆí•˜ì…¨ìŠµë‹ˆë‹¤.\n", player->name, raiseAmount);
                     for (int i = 0; i < PLAYER_COUNT; i++) {
-                        snprintf(message, sizeof(message), "%s´ÔÀÌ %d¸¸Å­ ·¹ÀÌÁîÇÏ¼Ì½À´Ï´Ù.\n", player->name, raiseAmount);
+                        snprintf(message, sizeof(message), "%së‹˜ì´ %dì›ì„ ë ˆì´ì¦ˆí•˜ì…¨ìŠµë‹ˆë‹¤.\n", player->name, raiseAmount);
                         write(player_out_fds[i], message, strlen(message) + 1);
                     }
                     sleep(1);
-                    snprintf(message, sizeof(message), "´ç½ÅÀÌ ÇöÀç °¡Áö°í ÀÖ´Â ±İ¾×: %d¿ø\n", player->money);
+                    snprintf(message, sizeof(message), "ë‹¹ì‹ ì´ í˜„ì¬ ê°€ì§€ê³  ìˆëŠ” ê¸ˆì•¡: %dì›\n", player->money);
                     write(player_out_fds[playerIndex], message, strlen(message) + 1);
                     sleep(1);
-                    snprintf(message, sizeof(message), "´Ù¸¥ ÇÃ·¹ÀÌ¾î ¹èÆÃÁß..");
+                    snprintf(message, sizeof(message), "ë‹¤ë¥¸ í”Œë ˆì´ì–´ ë°°íŒ…ì¤‘..");
                     write(player_out_fds[playerIndex], message, strlen(message) + 1);
                     sleep(1);
                 }
                 else {
-                    printf("·¹ÀÌÁî¸¦ ÇÒ ¼ö ¾ø½À´Ï´Ù. µ·ÀÌ ºÎÁ·ÇÕ´Ï´Ù.\n");
-                    snprintf(message, sizeof(message), "·¹ÀÌÁî¸¦ ÇÒ ¼ö ¾ø½À´Ï´Ù. µ·ÀÌ ºÎÁ·ÇÕ´Ï´Ù.\n");
+                    printf("ë ˆì´ì¦ˆë¥¼ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤. ëˆì´ ë¶€ì¡±í•©ë‹ˆë‹¤.\n");
+                    snprintf(message, sizeof(message), "ë ˆì´ì¦ˆë¥¼ í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤. ëˆì´ ë¶€ì¡±í•©ë‹ˆë‹¤.\n");
                     write(player_out_fds[playerIndex], message, strlen(message) + 1);
                     sleep(1);
-                    handlePlayerAction(player, currentBet, pot, playerIndex); // ´Ù½Ã ¼±ÅÃÇÏµµ·Ï Àç±Í È£Ãâ
+                    handlePlayerAction(player, currentBet, pot, playerIndex); // ë‹¤ì‹œ ì„ íƒí•˜ë„ë¡ ì¬ê·€ í˜¸ì¶œ
                 }
             }
         }
         break;
 
-        case 4: // Æúµå
+        case 4: // í´ë“œ
             player->isActive = 0;
-            printf("%s´ÔÀÌ ÆúµåÇÏ¼Ì½À´Ï´Ù.\n", player->name);
+            printf("%së‹˜ì´ í´ë“œí•˜ì…¨ìŠµë‹ˆë‹¤.\n", player->name);
             for (int i = 0; i < PLAYER_COUNT; i++) {
-                snprintf(message, sizeof(message), "%s´ÔÀÌ ÆúµåÇÏ¼Ì½À´Ï´Ù.\n", player->name);
+                snprintf(message, sizeof(message), "%së‹˜ì´ í´ë“œí•˜ì…¨ìŠµë‹ˆë‹¤.\n", player->name);
                 write(player_out_fds[i], message, strlen(message) + 1);
             }
             sleep(1);
-            snprintf(message, sizeof(message), "´Ù¸¥ ÇÃ·¹ÀÌ¾î ¹èÆÃÁß..");
+            snprintf(message, sizeof(message), "ë‹¤ë¥¸ í”Œë ˆì´ì–´ ë°°íŒ…ì¤‘..");
             write(player_out_fds[playerIndex], message, strlen(message) + 1);
             sleep(1);
             break;
 
-        case 5: // ¿ÃÀÎ
+        case 5: // ì˜¬ì¸
             *pot += player->money;
             player->currentBet += player->money;
             player->money = 0;
             *currentBet = (player->currentBet > *currentBet) ? player->currentBet : *currentBet;
             player->isAllIn = 1;
-            printf("%s´ÔÀÌ ¿ÃÀÎÇÏ¼Ì½À´Ï´Ù.\n", player->name);
+            printf("%së‹˜ì´ ì˜¬ì¸í•˜ì…¨ìŠµë‹ˆë‹¤.\n", player->name);
             for (int i = 0; i < PLAYER_COUNT; i++) {
-                snprintf(message, sizeof(message), "%s´ÔÀÌ ¿ÃÀÎÇÏ¼Ì½À´Ï´Ù.\n", player->name);
+                snprintf(message, sizeof(message), "%së‹˜ì´ ì˜¬ì¸í•˜ì…¨ìŠµë‹ˆë‹¤.\n", player->name);
                 write(player_out_fds[i], message, strlen(message) + 1);
             }
             sleep(1);
-            snprintf(message, sizeof(message), "´Ù¸¥ ÇÃ·¹ÀÌ¾î ¹èÆÃÁß..");
+            snprintf(message, sizeof(message), "ë‹¤ë¥¸ í”Œë ˆì´ì–´ ë°°íŒ…ì¤‘..");
             write(player_out_fds[playerIndex], message, strlen(message) + 1);
             sleep(1);
             break;
 
         default:
-            printf("Àß¸øµÈ ÀÔ·ÂÀÔ´Ï´Ù. ´Ù½Ã ¼±ÅÃÇØÁÖ¼¼¿ä.\n");
-            snprintf(message, sizeof(message), "Àß¸øµÈ ÀÔ·ÂÀÔ´Ï´Ù. ´Ù½Ã ¼±ÅÃÇØÁÖ¼¼¿ä.\n");
+            printf("ì˜ëª»ëœ ì…ë ¥ì…ë‹ˆë‹¤. ë‹¤ì‹œ ì„ íƒí•´ì£¼ì„¸ìš”.\n");
+            snprintf(message, sizeof(message), "ì˜ëª»ëœ ì…ë ¥ì…ë‹ˆë‹¤. ë‹¤ì‹œ ì„ íƒí•´ì£¼ì„¸ìš”.\n");
             write(player_out_fds[playerIndex], message, strlen(message) + 1);
             sleep(1);
             handlePlayerAction(player, currentBet, pot, playerIndex);
@@ -394,7 +469,7 @@ int countActivePlayers(Player players[], int playerCount) {
     return activeCount;
 }
 
-// ÇÑ¸íÀ» Á¦¿ÜÇÑ ¸ğµç ÇÃ·¹ÀÌ¾î°¡ Æúµå ÇßÀ» ½Ã ÇÑ¸íÀ» ½Â¸®ÀÚ·Î °áÁ¤
+// í•œëª…ì„ ì œì™¸í•œ ëª¨ë“  í”Œë ˆì´ì–´ê°€ í´ë“œ í–ˆì„ ì‹œ í•œëª…ì„ ìŠ¹ë¦¬ìë¡œ ê²°ì •
 Player* checkForFoldWinner(Player players[], int playerCount) {
     int activePlayerCount = 0;
     Player* lastPlayer = NULL;
@@ -406,22 +481,22 @@ Player* checkForFoldWinner(Player players[], int playerCount) {
         }
     }
 
-    // È°¼º »óÅÂÀÎ ÇÃ·¹ÀÌ¾î°¡ ÇÑ ¸íÀÌ¸é ±× ÇÃ·¹ÀÌ¾î°¡ ½ÂÀÚ
+    // í™œì„± ìƒíƒœì¸ í”Œë ˆì´ì–´ê°€ í•œ ëª…ì´ë©´ ê·¸ í”Œë ˆì´ì–´ê°€ ìŠ¹ì
     if (activePlayerCount == 1) {
         sleep(1);
-        printf("\n%s´ÔÀÌ ÆúµåÇÏÁö ¾Ê°í ³²¾ÆÀÖ¾î ½Â¸®ÇÏ¼Ì½À´Ï´Ù!\n", lastPlayer->name);
+        printf("\n%së‹˜ì´ í´ë“œí•˜ì§€ ì•Šê³  ë‚¨ì•„ìˆì–´ ìŠ¹ë¦¬í•˜ì…¨ìŠµë‹ˆë‹¤!\n", lastPlayer->name);
         for (int i = 0; i < PLAYER_COUNT; i++) {
-            snprintf(message, sizeof(message), "\n%s´ÔÀÌ ÆúµåÇÏÁö ¾Ê°í ³²¾ÆÀÖ¾î ½Â¸®ÇÏ¼Ì½À´Ï´Ù!\n", lastPlayer->name);
+            snprintf(message, sizeof(message), "\n%së‹˜ì´ í´ë“œí•˜ì§€ ì•Šê³  ë‚¨ì•„ìˆì–´ ìŠ¹ë¦¬í•˜ì…¨ìŠµë‹ˆë‹¤!\n", lastPlayer->name);
             write(player_out_fds[i], message, strlen(message) + 1);
         }
         return lastPlayer;
     }
 
-    // ¾ÆÁ÷ ½ÂÀÚ°¡ Á¤ÇØÁöÁö ¾Ê¾ÒÀ» °æ¿ì NULL ¹İÈ¯
+    // ì•„ì§ ìŠ¹ìê°€ ì •í•´ì§€ì§€ ì•Šì•˜ì„ ê²½ìš° NULL ë°˜í™˜
     return NULL;
 }
 
-// ½Â¸®ÀÚ ÆÇÁ¤ ÇÔ¼ö: Ä¿¹Â´ÏÆ¼ Ä«µå¿Í ÇÃ·¹ÀÌ¾îÀÇ È¦ Ä«µå¸¦ »ç¿ëÇØ ½Â¸®ÀÚ °áÁ¤ (¹èÆÃ¶ó¿îµå Á¾·á ÈÄ 2¸íÀÌ»óÀÇ ÇÃ·¹ÀÌ¾î°¡ ³²¾ÒÀ» ½Ã¿¡ ÆĞ¸¦ ºñ±³ÇÏ¿© ½Â¸®ÀÚ °áÁ¤)
+// ìŠ¹ë¦¬ì íŒì • í•¨ìˆ˜: ì»¤ë®¤ë‹ˆí‹° ì¹´ë“œì™€ í”Œë ˆì´ì–´ì˜ í™€ ì¹´ë“œë¥¼ ì‚¬ìš©í•´ ìŠ¹ë¦¬ì ê²°ì • (ë°°íŒ…ë¼ìš´ë“œ ì¢…ë£Œ í›„ 2ëª…ì´ìƒì˜ í”Œë ˆì´ì–´ê°€ ë‚¨ì•˜ì„ ì‹œì— íŒ¨ë¥¼ ë¹„êµí•˜ì—¬ ìŠ¹ë¦¬ì ê²°ì •)
 void determineWinners(Player players[], int playerCount, Card communityCards[], int* pot) {
     HandEvaluation bestEvaluation = { HIGH_CARD, 0, {0} };
     Player* winners[PLAYER_COUNT];
@@ -431,13 +506,13 @@ void determineWinners(Player players[], int playerCount, Card communityCards[], 
         if (players[i].isActive) {
             HandEvaluation playerEvaluation = evaluateHand(players[i].holeCards, communityCards);
 
-            // µğ¹ö±ë Ãâ·Â
-            printf("%s´ÔÀÇ ÇÚµå Æò°¡ °á°ú: ·©Å© = %d, ÃÖ°í Ä«µå = %d\n", players[i].name, playerEvaluation.rank, playerEvaluation.highCard);
-            printf("%s´ÔÀÇ Å°Ä¿ Ä«µå : ", players[i].name);
-            snprintf(message, sizeof(message), "%s´ÔÀÇ ÇÚµå Æò°¡ °á°ú: ·©Å© = %d, ÃÖ°í Ä«µå = %d\n", players[i].name, playerEvaluation.rank, playerEvaluation.highCard);
+            // ë””ë²„ê¹… ì¶œë ¥
+            printf("%së‹˜ì˜ í•¸ë“œ í‰ê°€ ê²°ê³¼: ë­í¬ = %d, ìµœê³  ì¹´ë“œ = %d\n", players[i].name, playerEvaluation.rank, playerEvaluation.highCard);
+            printf("%së‹˜ì˜ í‚¤ì»¤ ì¹´ë“œ : ", players[i].name);
+            snprintf(message, sizeof(message), "%së‹˜ì˜ í•¸ë“œ í‰ê°€ ê²°ê³¼: ë­í¬ = %d, ìµœê³  ì¹´ë“œ = %d\n", players[i].name, playerEvaluation.rank, playerEvaluation.highCard);
             write(player_out_fds[i], message, strlen(message) + 1);
             sleep(1);
-            snprintf(message, sizeof(message), "%s´ÔÀÇ Å°Ä¿ Ä«µå : ", players[i].name);
+            snprintf(message, sizeof(message), "%së‹˜ì˜ í‚¤ì»¤ ì¹´ë“œ : ", players[i].name);
             write(player_out_fds[i], message, strlen(message) + 1);
             sleep(1);
             for (int k = 0; k < 5; k++) {
@@ -449,14 +524,14 @@ void determineWinners(Player players[], int playerCount, Card communityCards[], 
             }
             printf("\n");
 
-            // ÇöÀçÀÇ ÃÖ°í ÆĞ¿Í ºñ±³ÇÏ¿© ¾÷µ¥ÀÌÆ®
+            // í˜„ì¬ì˜ ìµœê³  íŒ¨ì™€ ë¹„êµí•˜ì—¬ ì—…ë°ì´íŠ¸
             if (winnerCount == 0 ||
                 playerEvaluation.rank > bestEvaluation.rank ||
                 (playerEvaluation.rank == bestEvaluation.rank && playerEvaluation.highCard > bestEvaluation.highCard) ||
                 (playerEvaluation.rank == bestEvaluation.rank && playerEvaluation.highCard == bestEvaluation.highCard &&
                     compareKickers(playerEvaluation.kicker, bestEvaluation.kicker) > 0)) {
 
-                // »õ·Î¿î ÃÖ°í ÆĞ°¡ µîÀåÇÏ¸é ¿ì½ÂÀÚ ¸ñ·ÏÀ» ÃÊ±âÈ­ÇÏ°í ¾÷µ¥ÀÌÆ®
+                // ìƒˆë¡œìš´ ìµœê³  íŒ¨ê°€ ë“±ì¥í•˜ë©´ ìš°ìŠ¹ì ëª©ë¡ì„ ì´ˆê¸°í™”í•˜ê³  ì—…ë°ì´íŠ¸
                 bestEvaluation = playerEvaluation;
                 winners[0] = &players[i];
                 winnerCount = 1;
@@ -465,7 +540,7 @@ void determineWinners(Player players[], int playerCount, Card communityCards[], 
                 playerEvaluation.highCard == bestEvaluation.highCard &&
                 compareKickers(playerEvaluation.kicker, bestEvaluation.kicker) == 0) {
 
-                // µ¿ÀÏÇÑ ÃÖ°í ÆĞ¸¦ °¡Áø ÇÃ·¹ÀÌ¾î Ãß°¡
+                // ë™ì¼í•œ ìµœê³  íŒ¨ë¥¼ ê°€ì§„ í”Œë ˆì´ì–´ ì¶”ê°€
                 winners[winnerCount++] = &players[i];
             }
         }
@@ -475,26 +550,26 @@ void determineWinners(Player players[], int playerCount, Card communityCards[], 
         int splitPot = *pot / winnerCount;
         for (int i = 0; i < winnerCount; i++) {
             winners[i]->money += splitPot;
-            printf("\n%s´ÔÀÌ °øµ¿ ½Â¸®ÇÏ¿© %dÀÇ ÆÇµ·À» ¹Ş¾Ò½À´Ï´Ù!\n", winners[i]->name, splitPot);
-            // ¸ğµÎ¿¡°Ô Ãâ·ÂµÇµµ·Ï ±¸Çö ÇÊ¿ä
-            snprintf(message, sizeof(message), "\n%s´ÔÀÌ °øµ¿ ½Â¸®ÇÏ¿© %dÀÇ ÆÇµ·À» ¹Ş¾Ò½À´Ï´Ù!\n", winners[i]->name, splitPot);
+            printf("\n%së‹˜ì´ ê³µë™ ìŠ¹ë¦¬í•˜ì—¬ %dì˜ íŒëˆì„ ë°›ì•˜ìŠµë‹ˆë‹¤!\n", winners[i]->name, splitPot);
+            // ëª¨ë‘ì—ê²Œ ì¶œë ¥ë˜ë„ë¡ êµ¬í˜„ í•„ìš”
+            snprintf(message, sizeof(message), "\n%së‹˜ì´ ê³µë™ ìŠ¹ë¦¬í•˜ì—¬ %dì˜ íŒëˆì„ ë°›ì•˜ìŠµë‹ˆë‹¤!\n", winners[i]->name, splitPot);
             write(player_out_fds[i], message, strlen(message) + 1);
         }
     }
     else if (winnerCount == 1) {
         winners[0]->money += *pot;
-        printf("\n%s´ÔÀÌ °¡Àå ³ôÀº ÇÚµå¸¦ °¡Áö°í ½Â¸®ÇÏ¼Ì½À´Ï´Ù! ÆÇµ· %d¸¦ Â÷ÁöÇÕ´Ï´Ù!\n", winners[0]->name, *pot);
+        printf("\n%së‹˜ì´ ê°€ì¥ ë†’ì€ í•¸ë“œë¥¼ ê°€ì§€ê³  ìŠ¹ë¦¬í•˜ì…¨ìŠµë‹ˆë‹¤! íŒëˆ %dë¥¼ ì°¨ì§€í•©ë‹ˆë‹¤!\n", winners[0]->name, *pot);
         for (int i = 0; i < PLAYER_COUNT; i++) {
-            snprintf(message, sizeof(message), "\n%s´ÔÀÌ °¡Àå ³ôÀº ÇÚµå¸¦ °¡Áö°í ½Â¸®ÇÏ¼Ì½À´Ï´Ù! ÆÇµ· %d¸¦ Â÷ÁöÇÕ´Ï´Ù!\n", winners[0]->name, *pot);
+            snprintf(message, sizeof(message), "\n%së‹˜ì´ ê°€ì¥ ë†’ì€ í•¸ë“œë¥¼ ê°€ì§€ê³  ìŠ¹ë¦¬í•˜ì…¨ìŠµë‹ˆë‹¤! íŒëˆ %dë¥¼ ì°¨ì§€í•©ë‹ˆë‹¤!\n", winners[0]->name, *pot);
             write(player_out_fds[i], message, strlen(message) + 1);
         }
         sleep(2);
     }
     else {
-        printf("\n½Â¸®ÀÚ°¡ ¾ø½À´Ï´Ù. È®ÀÎÀÌ ÇÊ¿äÇÕ´Ï´Ù.\n");
+        printf("\nìŠ¹ë¦¬ìê°€ ì—†ìŠµë‹ˆë‹¤. í™•ì¸ì´ í•„ìš”í•©ë‹ˆë‹¤.\n");
     }
 
-    // Pot ÃÊ±âÈ­
+    // Pot ì´ˆê¸°í™”
     *pot = 0;
 }
 
@@ -510,7 +585,7 @@ int compareKickers(int kicker1[], int kicker2[]) {
     return 0;
 }
 
-// °ÔÀÓ ÃÊ±âÈ­ ÇÔ¼ö: ÇÃ·¹ÀÌ¾îµéÀÇ »óÅÂ¸¦ ÃÊ±âÈ­ÇÏ°í »õ·Î¿î °ÔÀÓ ÁØºñ
+// ê²Œì„ ì´ˆê¸°í™” í•¨ìˆ˜: í”Œë ˆì´ì–´ë“¤ì˜ ìƒíƒœë¥¼ ì´ˆê¸°í™”í•˜ê³  ìƒˆë¡œìš´ ê²Œì„ ì¤€ë¹„
 void resetGame(Player players[], int playerCount) {
     for (int i = 0; i < playerCount; i++) {
         if (players[i].money > 0) {

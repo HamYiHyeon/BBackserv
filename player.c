@@ -17,33 +17,33 @@ int raise_amount;
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
-        fprintf(stderr, "»ç¿ë¹ı: %s <player_index>\n", argv[0]);
+        fprintf(stderr, "ì‚¬ìš©ë²•: %s <player_index>\n", argv[0]);
         return 1;
     }
 
     int player_index = atoi(argv[1]);
     pid_t my_pid = getpid();
 
-    // °øÀ¯ ¸Ş¸ğ¸® Á¢±Ù
+    // ê³µìœ  ë©”ëª¨ë¦¬ ì ‘ê·¼
     int shmid = shmget(SHM_KEY, sizeof(SharedMemory), 0666);
     if (shmid < 0) {
-        perror("shmget ½ÇÆĞ");
+        perror("shmget ì‹¤íŒ¨");
         exit(1);
     }
 
     SharedMemory* shm = (SharedMemory*)shmat(shmid, NULL, 0);
     if (shm == (SharedMemory*)-1) {
-        perror("shmat ½ÇÆĞ");
+        perror("shmat ì‹¤íŒ¨");
         exit(1);
     }
 
-    // ÀÚ½ÅÀÇ PID¿Í ¿¬°á »óÅÂ¸¦ °øÀ¯ ¸Ş¸ğ¸®¿¡ ±â·Ï
+    // ìì‹ ì˜ PIDì™€ ì—°ê²° ìƒíƒœë¥¼ ê³µìœ  ë©”ëª¨ë¦¬ì— ê¸°ë¡
     shm->player_pids[player_index] = my_pid;
     shm->player_connected[player_index] = 1;
 
-    printf("ÇÃ·¹ÀÌ¾î %d ÀÔÀå ¿Ï·á: PID=%d\n", player_index + 1, my_pid);
+    printf("í”Œë ˆì´ì–´ %d ì…ì¥ ì™„ë£Œ: PID=%d\n", player_index + 1, my_pid);
 
-    // ÀÌ¸§ÀÖ´Â ÆÄÀÌÇÁ(FIFO) ¿¬°á
+    // ì´ë¦„ìˆëŠ” íŒŒì´í”„(FIFO) ì—°ê²°
     char player_in_fifo[20], player_out_fifo[20];
     snprintf(player_in_fifo, sizeof(player_in_fifo), "player%d_in.fifo", player_index + 1);
     snprintf(player_out_fifo, sizeof(player_out_fifo), "player%d_out.fifo", player_index + 1);
@@ -52,18 +52,18 @@ int main(int argc, char* argv[]) {
     int fd_out = open(player_out_fifo, O_RDONLY);
 
     if (fd_in == -1 || fd_out == -1) {
-        perror("ÆÄÀÌÇÁ ¿­±â ½ÇÆĞ");
+        perror("íŒŒì´í”„ ì—´ê¸° ì‹¤íŒ¨");
         exit(1);
     }
 
-    // ¸ŞÀÎ ÇÁ·Î¼¼½º¿Í Åë½Å ½ÃÀÛ
+    // ë©”ì¸ í”„ë¡œì„¸ìŠ¤ì™€ í†µì‹  ì‹œì‘
     while (1) {
-        // ¸ŞÀÎ ÇÁ·Î¼¼½º·ÎºÎÅÍ ¸Ş½ÃÁö ÀĞ±â
+        // ë©”ì¸ í”„ë¡œì„¸ìŠ¤ë¡œë¶€í„° ë©”ì‹œì§€ ì½ê¸°
         if (read(fd_out, buffer, sizeof(buffer)) > 0) {
             printf("%s\n", buffer);
 
 
-            // ¸Ş¼¼Áö À¯ÇüÀ» È®ÀÎ
+            // ë©”ì„¸ì§€ ìœ í˜•ì„ í™•ì¸
             if (strncmp(buffer, "INPUT", 5) == 0) {
                 scanf("%s", message);
                 write(fd_in, message, strlen(message) + 1);

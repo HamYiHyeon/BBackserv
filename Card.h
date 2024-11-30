@@ -1,17 +1,17 @@
 #ifndef CARD_H
 #define CARD_H
 
-#define DECK_SIZE 52    // µ¦ÀÇ ÃÑ Ä«µå ¼ö
+#define DECK_SIZE 52    // ë±ì˜ ì´ ì¹´ë“œ ìˆ˜
 
-/* ÇÃ·¹ÀÌ¾îÀÇ Ä«µå¿Í Ä¿¹Â´ÏÆ¼ Ä«µå¸¦ Á¶ÇÕÇÏ¿© ÇÃ·¹ÀÌ¾îÀÇ ÆĞ¸¦ °áÁ¤ÇÏ´Â ·ÎÁ÷ÀÔ´Ï´Ù. */
+/* í”Œë ˆì´ì–´ì˜ ì¹´ë“œì™€ ì»¤ë®¤ë‹ˆí‹° ì¹´ë“œë¥¼ ì¡°í•©í•˜ì—¬ í”Œë ˆì´ì–´ì˜ íŒ¨ë¥¼ ê²°ì •í•˜ëŠ” ë¡œì§ì…ë‹ˆë‹¤. */
 
-// Ä«µå ±¸Á¶Ã¼ Á¤ÀÇ
+// ì¹´ë“œ êµ¬ì¡°ì²´ ì •ì˜
 typedef struct {
-    int suit;  // Ä«µåÀÇ ¹®¾ç (0: Hearts, 1: Diamonds, 2: Clubs, 3: Spades)
-    int rank;  // Ä«µåÀÇ °ª (2-14, 11: Jack, 12: Queen, 13: King, 14: Ace)
+    int suit;  // ì¹´ë“œì˜ ë¬¸ì–‘ (0: Hearts, 1: Diamonds, 2: Clubs, 3: Spades)
+    int rank;  // ì¹´ë“œì˜ ê°’ (2-14, 11: Jack, 12: Queen, 13: King, 14: Ace)
 } Card;
 
-// ÇÚµå ·©Å· ¼øÀ§
+// í•¸ë“œ ë­í‚¹ ìˆœìœ„
 typedef enum {
     HIGH_CARD,
     ONE_PAIR,
@@ -26,9 +26,9 @@ typedef enum {
 } HandRank;
 
 typedef struct {
-    HandRank rank;     // ÇÚµåÀÇ Á¾·ù (¿¹: ¿øÆä¾î, ÇÃ·¯½Ã µî)
-    int highCard;      // °¡Àå ³ôÀº Ä«µåÀÇ ¼øÀ§
-    int kicker[5];     // kicker Ä«µåµé (ÇÚµå ·©Å©°¡ °°À» °æ¿ì ºñ±³¿¡ »ç¿ë)
+    HandRank rank;     // í•¸ë“œì˜ ì¢…ë¥˜ (ì˜ˆ: ì›í˜ì–´, í”ŒëŸ¬ì‹œ ë“±)
+    int highCard;      // ê°€ì¥ ë†’ì€ ì¹´ë“œì˜ ìˆœìœ„
+    int kicker[5];     // kicker ì¹´ë“œë“¤ (í•¸ë“œ ë­í¬ê°€ ê°™ì„ ê²½ìš° ë¹„êµì— ì‚¬ìš©)
 } HandEvaluation;
 
 HandEvaluation evaluateHand(Card playerCards[], Card communityCards[]);
