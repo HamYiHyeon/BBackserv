@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <sys/wait.h>
 
 #define SHM_KEY 1234
 int player_in_fds[PLAYER_COUNT];
@@ -47,6 +48,7 @@ int main() {
         shm->player_pids[i] = 0;
         shm->player_connected[i] = 0;
     }
+	shm->winnerIndex = -1;
 
     // 파이프 파일 존재하지 않으면 생성하고 존재하면 생성하지 않음
     for (int i = 0; i < PLAYER_COUNT; i++) {
@@ -121,10 +123,10 @@ int main() {
         players[i].isAllIn = 0;
     }
 
-    // 덱 초기화 및 셔플
+	// 덱 초기화 및 셔플
     sleep(1);
     initializeDeck(deck);
-    shuffleDeck(deck);
+	shuffleDeck(deck);
 
     // 게임 진행 루프
     while (countActivePlayers(players, PLAYER_COUNT) > 1) {
@@ -210,9 +212,33 @@ int main() {
             }
         }
         sleep(1);
-        // 4. 승리자 판정
+
+		// 4. 승리자 판정
         if (winner == NULL) {
-            determineWinners(players, PLAYER_COUNT, communityCards, &pot);
+            pid_t pid = fork();  // 자식 프로세스 생성
+            if (pid < 0) {
+                perror("fork 실패");
+                exit(1);
+            }
+
+            if (pid == 0) {  // 자식 프로세스
+                // 자식 프로세스에서 승리자 판별
+                determineWinners(players, PLAYER_COUNT, communityCards, &pot);
+				for (int i = 0; i < PLAYER_COUNT; i++) {
+                    if (players[i].isActive && players[i].money > 0) {
+                        shm->winnerIndex = i;  // 승리자 인덱스를 저장
+                        break;
+                    }
+                }
+                exit(0);  // 자식 프로세스 종료
+            }
+            else {  // 부모 프로세스
+                // 자식 프로세스의 종료를 기다린다
+				currentBet = 0;
+                deckIndex = 0;
+                shuffleDeck(deck);  // 덱을 다시 셔플하여 새로운 게임 준비
+				wait(NULL);
+            }
         }
 
         printf("\n");
@@ -220,20 +246,15 @@ int main() {
         sleep(1);
         // 5. 게임 초기화
         resetGame(players, PLAYER_COUNT);
-        currentBet = 0;
-        deckIndex = 0;
-        shuffleDeck(deck);  // 덱을 다시 셔플하여 새로운 게임 준비
     }
     sleep(1);
     // 최종 우승자 출력
-    for (int i = 0; i < PLAYER_COUNT; i++) {
-        if (players[i].isActive && players[i].money > 0) {
-            printf("\n\n########################################################################\n\n\n		게임 종료! 최종 우승자는 %s입니다.\n\n\n########################################################################\n\n", players[i].name);
-            for (int j = 0; j < PLAYER_COUNT; j++) {
-                snprintf(message, sizeof(message), "\n\n########################################################################\n\n\n		게임 종료! 최종 우승자는 %s입니다.\n\n\n########################################################################\n\n", players[i].name);
-                write(player_out_fds[j], message, strlen(message) + 1);
-            }
-            break;
+    if (shm->winnerIndex != -1) {
+        int winnerIndex = shm->winnerIndex;
+		printf("\n\n########################################################################\n\n\n		게임 종료! 최종 우승자는 %s입니다.\n\n\n########################################################################\n\n", players[winnerIndex].name);
+        for (int j = 0; j < PLAYER_COUNT; j++) {
+            snprintf(message, sizeof(message), "\n\n########################################################################\n\n\n		게임 종료! 최종 우승자는 %s입니다.\n\n\n########################################################################\n\n", players[winnerIndex].name);
+            write(player_out_fds[j], message, strlen(message) + 1);
         }
     }
 
